@@ -1,0 +1,12 @@
+**/node_modules
+**/venv
+**/.venv
+**/dist
+**/.pytest_cache
+**/*.db
+**/uploads
+.git
+.github
+*.log
+.env
+.env.*
