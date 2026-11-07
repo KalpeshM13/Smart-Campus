@@ -23,17 +23,3 @@ services:
         value: 72
       - key: SLA_HOURS_LOW
         value: 120
-
-  # React Single Page Application Frontend
-  - type: web
-    name: smartcampus-frontend
-    runtime: static
-    rootDir: frontend
-    plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
