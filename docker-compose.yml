@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # MongoDB Database (Local instance or fallback for Atlas)
+  mongo:
+    image: mongo:7.0
+    container_name: smartcampus-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend (MongoDB Atlas Ready)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartcampus-backend
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      # If connecting to Atlas, override MONGODB_URI in .env
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-smartcampus_db}
+      SECRET_KEY: ${SECRET_KEY:-smart-campus-enterprise-super-secret-jwt-key-2026}
+    ports:
+      - "8000:8000"
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smartcampus-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  mongo_data:
