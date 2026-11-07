@@ -3,6 +3,7 @@ services:
   - type: web
     name: smartcampus-backend
     runtime: python
+    autoDeploy: true
     rootDir: backend
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -28,7 +29,7 @@ services:
   - type: web
     name: smartcampus-frontend
     runtime: static
-
+    autoDeploy: true
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
