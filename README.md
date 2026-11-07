@@ -1,75 +1,206 @@
-# Smart Campus Service Management System (SCMS)
+# 🎓 Smart Campus Service Management System (SCMS)
 
-## Academic Mini-Project Demonstration & Evaluation Guide
+> **Enterprise Campus Service Automation & Ticket Lifecycle Platform**  
+> Built with **React 19**, **FastAPI**, and **MongoDB Atlas Cloud**.
 
-**Academic Year:** 2026–27 | **Project Type:** Full-Stack Enterprise Web Application  
-**Database Architecture:** MongoDB Atlas (Primary Cloud Document Database) & PyMongo Repositories  
-**Application Stack:** React 19, TypeScript, Tailwind CSS v4, Python FastAPI, PyMongo, Pydantic V2, JWT Authentication  
-**Compliance Reference:** [Smart_Campus_Service_Management_System_PRD.md](./Smart_Campus_Service_Management_System_PRD.md)
-
----
-
-### 🌟 1. Executive Summary & Problem Solved
-
-Campus service requests are traditionally handled through scattered emails, WhatsApp groups, paper logs, or verbal complaints—resulting in unresolved issues, unclear departmental ownership, and zero SLA visibility.
-
-The **Smart Campus Service Management System (SCMS)** is an institutional-grade platform designed to centralize and automate the entire complaint lifecycle:
-
-- **Document-Oriented Cloud Scalability:** Powered by **MongoDB Atlas**, providing low-latency indexed queries, embedded sub-records, and MongoDB Aggregation Pipelines for high-performance institutional reporting.
-- **Automatic Dispatch Engine (FR-05):** Auto-routes complaints to responsible departments (IT, Maintenance, Electrical, Housekeeping, Security) based on a configurable category mapping matrix.
-- **Strict Lifecycle Governance (FR-06):** Tracks requests across defined states (`NEW → ASSIGNED → IN_PROGRESS → ON_HOLD → RESOLVED → CLOSED`), enforcing mandatory technical resolution notes and hold justifications.
-- **SLA Breach Monitoring (FR-15):** Tracks resolution deadlines (High: 24h, Medium: 72h, Low: 120h) with automated overdue alerts.
-- **Closed-Loop Feedback (FR-09):** Collects 5-star CSAT ratings and verbatim comments post-resolution, feeding executive analytics.
-- **Field Technician Work Orders:** Generates printable dispatch work orders with QR codes, safety protocols, and sign-off lines.
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 19](https://img.shields.io/badge/Frontend-React_19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MongoDB Atlas](https://img.shields.io/badge/Database-MongoDB_Atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
+[![Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind_CSS_v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Pytest](https://img.shields.io/badge/Tests-16%20Passed-brightgreen?logo=pytest&logoColor=white)](https://pytest.org/)
 
 ---
 
-### ⚡ 2. One-Click Quick Start (Demonstration Mode)
+## 📑 Table of Contents
 
-The project includes pre-configured batch scripts for instant demonstration on Windows:
+- [🌟 Overview](#-overview)
+- [⚡ Quick Start (Windows 1-Click)](#-quick-start-windows-1-click)
+- [👥 Demo Accounts & Credentials](#-demo-accounts--credentials)
+- [💻 Manual Local Setup](#-manual-local-setup)
+  - [Backend Setup (FastAPI & MongoDB)](#1-backend-setup-fastapi--mongodb)
+  - [Frontend Setup (React 19 & Vite)](#2-frontend-setup-react-19--vite)
+- [🎬 5-Minute Demonstration Walkthrough](#-5-minute-demonstration-walkthrough)
+- [🍃 MongoDB Atlas Cloud Integration](#-mongodb-atlas-cloud-integration)
+- [🧪 Automated Test Suite](#-automated-test-suite)
+- [🚀 Cloud Deployment (Render)](#-cloud-deployment-render)
+- [🔐 Security & GitHub Readiness](#-security--github-readiness)
+- [📁 Project Architecture](#-project-architecture)
 
-#### Option A: One-Click Full Stack Launch
+---
 
-Double-click or run from the project root directory:
+## 🌟 Overview
 
+The **Smart Campus Service Management System** centralizes and automates institutional complaint management for universities and colleges. It replaces scattered emails, paper logs, and messaging channels with an auditable, enterprise SaaS workflow.
+
+### Key Capabilities
+
+* **🤖 Dynamic Auto-Assignment:** Requests are automatically dispatched to responsible departments (IT, Electrical, Maintenance, Security, etc.) based on category mapping rules.
+* **⏱️ Strict SLA Governance:** Enforces resolution deadlines (High: 24h, Medium: 72h, Low: 120h) with automatic overdue detection and escalation alerts.
+* **🔒 Mandatory Resolution Validation:** Tickets cannot be closed without technical resolution notes (minimum 5 characters) or hold justifications.
+* **⭐ Closed-Loop Feedback:** Students submit 5-star CSAT ratings and feedback post-resolution, feeding live administrator analytics.
+* **📄 Printable Field Work Orders:** Generates formal dispatch tickets with QR codes, safety protocols, and technician signature blocks.
+* **🍃 Cloud-Native Document Storage:** Powered by MongoDB Atlas with aggregation pipelines for fast analytical dashboards.
+
+```mermaid
+flowchart LR
+    A["Student / Faculty\n(Registers Issue)"] -->|"Category Auto-Routing"| B["Department Queue\n(IT / Maintenance / etc.)"]
+    B -->|"Technician Dispatched"| C["In Progress\n(SLA Timer Active)"]
+    C -->|"Mandatory Notes"| D["Resolved"]
+    D -->|"5-Star CSAT Feedback"| E["Closed & Audited"]
+```
+
+---
+
+## ⚡ Quick Start (Windows 1-Click)
+
+The repository provides automated Windows batch scripts for zero-hassle launch:
+
+### 1. Launch Everything in 1 Click
+Double-click or run from the project root:
 ```powershell
 .\run_all.bat
 ```
+* **Backend API:** [http://localhost:8000/docs](http://localhost:8000/docs) (Interactive Swagger Docs)
+* **Frontend Web App:** [http://localhost:5173](http://localhost:5173)
 
-*This simultaneously starts the FastAPI backend on port `8000` and the React frontend on port `5173` in separate terminal windows.*
-
-#### Option B: One-Click Test Suite & E2E MongoDB Audit
-
-Double-click or run from the project root directory:
-
+### 2. Run the Test Suite in 1 Click
 ```powershell
 .\test_backend.bat
 ```
-
-*Executes the 16 automated Pytest test cases (T1–T17, attachment upload, role validation) and the live MongoDB E2E database verification script.*
+*Executes all 16 Pytest scenarios and the 7-stage live MongoDB lifecycle audit.*
 
 ---
 
-### 🍃 3. MongoDB Atlas Configuration & Data Migration
+## 👥 Demo Accounts & Credentials
 
-#### 3.1 Environment Configuration (`.env`)
+The system includes pre-seeded accounts representing all institutional campus roles.
 
-Configure your MongoDB Atlas connection string in `backend/.env` (or set environment variables):
+> [!TIP]
+> **Universal Password:** All demo accounts use the password: **`CampusSecret2026!`**  
+> You can switch between roles instantly using the **Persona Switcher** dropdown in the top-right navigation bar of the web app.
 
-```env
-# MongoDB Atlas Connection
-MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority"
-MONGODB_DB_NAME="smartcampus_db"
+| Role | Name | Email Address | Department / Title |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | Dr. Eleanor Sterling | `dean.sterling@smartcampus.edu` | Dean of Operations & System Admin |
+| **Department Staff** | Alex Vance | `alex.vance@it.smartcampus.edu` | Senior Systems Engineer (IT Dept) |
+| **Student** | Sarah Chen | `sarah.chen@student.smartcampus.edu` | B.Tech CS & AI, Year 3 (`CS-2024-8841`) |
+| **Faculty** | Prof. Robert Miller | `r.miller@smartcampus.edu` | Dept of Electrical Engineering |
 
-# Legacy SQL Database (For data migration & rollback only)
-DATABASE_URL="sqlite:///./smart_campus.db"
+---
+
+## 💻 Manual Local Setup
+
+If you prefer running commands manually in separate terminal windows:
+
+### 1. Backend Setup (FastAPI & MongoDB)
+
+```powershell
+# Step 1: Open backend folder
+cd backend
+
+# Step 2: Activate virtual environment
+.\venv\Scripts\Activate.ps1
+
+# Step 3: Install Python dependencies
+pip install -r requirements.txt
+
+# Step 4: Start FastAPI development server
+uvicorn app.main:app --reload --port 8000
 ```
 
-*Note: For local offline development without internet, `MONGODB_URI="mongodb://localhost:27017"` is supported.*
+* **Swagger API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Health Check Endpoint:** [http://localhost:8000/health](http://localhost:8000/health)
 
-#### 3.2 Idempotent PostgreSQL / SQLite to MongoDB Atlas Migration
+---
 
-To transfer all existing SQL records (departments, categories, accounts, complaints, history, feedback) to MongoDB Atlas:
+### 2. Frontend Setup (React 19 & Vite)
+
+```powershell
+# Step 1: Open frontend folder in a new terminal
+cd frontend
+
+# Step 2: Install Node dependencies
+npm install
+
+# Step 3: Start Vite dev server
+npm run dev
+```
+
+* **Frontend Web Application:** [http://localhost:5173](http://localhost:5173)
+
+---
+
+## 🎬 5-Minute Demonstration Walkthrough
+
+Follow this 4-step sequence during project evaluation to showcase the complete ticket lifecycle:
+
+```mermaid
+flowchart TD
+    S1["1. Student (Sarah Chen)"] -->|"Submit Wi-Fi Complaint"| S2["2. Auto-Router -> IT Dept"]
+    S2 --> S3["3. Staff (Alex Vance)"]
+    S3 -->|"Start -> Work Order -> Resolve with Notes"| S4["4. Student (Sarah Chen)"]
+    S4 -->|"Submit 5-Star Feedback -> Auto Close"| S5["5. Admin (Dr. Sterling)"]
+    S5 -->|"Live Charts & CSV Audit Export"| S6["Evaluation Complete ✓"]
+```
+
+### Step 1: Student Persona — Register a Complaint
+1. Open [http://localhost:5173](http://localhost:5173).
+2. Switch persona to **Sarah Chen (Student)** in the top-right corner.
+3. Click **"+ New Request"**.
+4. Select Category: **"Internet / Wi-Fi"**. Notice the preview badge:  
+   *`Auto-routed to IT Department • SLA Target: 24 Hours`*
+5. Fill in:
+   * **Title:** `Wi-Fi deadzone in Turing Auditorium 202`
+   * **Description:** `Access point dropping connection intermittently during CS-401 lecture.`
+   * **Location:** `Turing Computing Block B` / `Auditorium 202`
+6. Click **"Submit Request"**. A toast notification confirms generation of ticket `SCMS-2026-XXXXXX`.
+
+### Step 2: Staff Persona — Triage & Work Order
+1. Switch persona to **Alex Vance (Staff - IT Dept)**.
+2. The UI switches to the **IT Department Dispatch Terminal**.
+3. Open the newly assigned ticket from the queue table.
+4. Click **"Start Processing Ticket"** (status moves to `IN_PROGRESS`).
+5. Click **"Print Official Work Order"** to preview the printable field ticket with QR code and technician sign-off lines.
+6. Click **"Mark Resolved"**, enter technical notes (*"Replaced degraded 5GHz antenna and tested 0% packet loss"*), and confirm.
+
+### Step 3: Student Persona — CSAT Rating & Feedback
+1. Switch back to **Sarah Chen (Student)**.
+2. Notice the alert: *"You have 1 resolved request awaiting satisfaction feedback!"*.
+3. Click **"Rate Resolution"**, select **5 Stars**, enter comments, and submit.
+4. The ticket automatically transitions to **`CLOSED`**.
+
+### Step 4: Administrator Persona — Live Analytics
+1. Switch persona to **Dr. Eleanor Sterling (Administrator)**.
+2. View the **Executive Dashboard** powered by live MongoDB aggregations:
+   * 6 KPI metric cards with real-time resolution rates.
+   * Department Workload vs. Resolution Bar Chart.
+   * Category Volume Donut Chart.
+3. Open the **"Feedback & CSAT"** tab to view the newly submitted rating.
+4. In the complaints table, click **"Export CSV"** to download the audit log.
+
+---
+
+## 🍃 MongoDB Atlas Cloud Integration
+
+The backend is connected to **MongoDB Atlas Cloud**.
+
+### Environment Configuration (`backend/.env`)
+
+Your connection string is stored in [`backend/.env`](./backend/.env):
+
+```env
+# MongoDB Atlas Cloud Connection String
+MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority"
+MONGODB_DB_NAME="smartcampus_db"
+```
+
+> [!NOTE]
+> For offline local development without internet, `MONGODB_URI="mongodb://localhost:27017"` is also fully supported.
+
+### Idempotent SQL to MongoDB Data Migration Tool
+
+If you ever need to sync or re-populate records from the legacy database:
 
 ```powershell
 cd backend
@@ -77,130 +208,15 @@ $env:PYTHONPATH="."
 .\venv\Scripts\python.exe scripts/migrate_sql_to_mongo.py
 ```
 
-* **Idempotent:** Safe to run repeatedly; uses document upserts (`_id`) without duplicating records.
-* **Non-Destructive:** Source SQL database is accessed in read-only mode and is **never modified or deleted**.
-* **Index Creation:** Automatically provisions unique indexes (`users.email`, `departments.name`, `complaints.complaint_number`, `feedback.complaint_id`) and compound query indexes.
-* **Counter Synchronization:** Synchronizes atomic sequential tracking numbers (`SCMS-2026-000001`).
-
-#### 3.3 Backup & Rollback Plan
-
-1. The SQL database (`smart_campus.db` / PostgreSQL) remains untouched as an offline backup.
-2. In case of any rollback requirement, the SQL database schema and Alembic migrations remain fully intact in `backend/alembic/`.
-3. To switch back, restore `DATABASE_URL` and point dependencies to the relational engine.
+* **Safe & Idempotent:** Uses `safe_upsert` matching both `_id` and unique business keys (`email`, `user_id`, `name`).
+* **Non-Destructive:** The SQL source database is read-only and **never modified**.
+* **Automatic Indexes:** Automatically verifies unique and compound MongoDB indexes on all collections.
 
 ---
 
-### 🚀 4. Render Deployment (Production Ready)
+## 🧪 Automated Test Suite
 
-The repository includes a root [`render.yaml`](./render.yaml) blueprint for instant zero-config deployment on [Render](https://render.com):
-
-1. **Connect Repository:** Link this GitHub repository to your Render account.
-2. **Blueprints:** Click **"New +" → "Blueprint"** and select the repository. Render will automatically detect `render.yaml`.
-3. **Environment Variables:**
-   - In Render Dashboard for `smartcampus-backend`, set `MONGODB_URI` to your MongoDB Atlas connection string.
-   - Set `MONGODB_DB_NAME` = `smartcampus_db`.
-4. **Deploy:** Render will build and deploy:
-   - **Backend Web Service (`smartcampus-backend`):** Python 3.11 with Uvicorn.
-   - **Frontend Static Site (`smartcampus-frontend`):** React 19 Vite SPA.
-
----
-
-### 💻 5. Local Step-by-Step Setup & Execution
-
-#### 5.1 Backend Setup (FastAPI & MongoDB)
-
-```powershell
-# 1. Navigate to backend directory
-cd backend
-
-# 2. Activate virtual environment
-.\venv\Scripts\Activate.ps1
-
-# 3. Install dependencies (FastAPI, PyMongo, Pydantic, etc.)
-pip install -r requirements.txt
-
-# 4. Start the FastAPI server
-uvicorn app.main:app --reload --port 8000
-```
-
-- **Backend API Docs (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check Endpoint:** [http://localhost:8000/health](http://localhost:8000/health)
-
-#### 5.2 Frontend Setup (React 19, TypeScript, Tailwind v4)
-
-```powershell
-# 1. Navigate to frontend directory in a separate terminal
-cd "d:\Hackathon project\Smart Campus\frontend"
-
-# 2. Start Vite development server
-npm run dev
-```
-
-- **Frontend Web Portal:** [http://localhost:5173](http://localhost:5173)
-
----
-
-### 👥 6. Pre-Configured Demonstration Accounts
-
-All demo accounts use the default password: **`CampusSecret2026!`**
-
-| Role | Demo User Name | Email Address | Academic Department / Role |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | Dr. Eleanor Sterling | `dean.sterling@smartcampus.edu` | Dean of Operations / System Admin |
-| **Department Staff** | Alex Vance | `alex.vance@it.smartcampus.edu` | Senior Systems Engineer (IT Department) |
-| **Student** | Sarah Chen | `sarah.chen@student.smartcampus.edu` | B.Tech CS & AI, Year 3 (ID: `STU-2024-8842`) |
-| **Faculty** | Prof. Robert Miller | `r.miller@smartcampus.edu` | Department of Electrical Engineering |
-
-> [!TIP]
-> **Live Persona Switcher:** You can switch between any of these roles instantly using the user dropdown in the top-right header of the web application!
-
----
-
-### 🎬 7. Recommended 5-Minute Demonstration Script for Evaluators
-
-```mermaid
-flowchart LR
-    A["1. Student Persona"] -->|"Submit Wi-Fi Issue"| B["2. MongoDB Auto-Router"]
-    B -->|"Category -> IT Dept"| C["3. Staff Persona"]
-    C -->|"Start & Resolve with Notes"| D["4. Student Persona"]
-    D -->|"Rate 5 Stars & Close"| E["5. Admin Persona"]
-    E -->|"MongoDB Aggregations & Export"| F["Evaluation Complete"]
-```
-
-#### Step 1: Student Persona — Register a Service Request
-1. Open [http://localhost:5173](http://localhost:5173).
-2. Switch persona to **Sarah Chen (Student)** in the top-right header.
-3. Click the blue **"+ New Request"** button.
-4. Select Category: **"Internet / Wi-Fi"**. Notice the **Dynamic Routing Preview** badge: *"Automatically routed to IT Department • SLA Target: 24 Hours"*.
-5. Enter title, description, building, room, and submit.
-6. A toast notification confirms ticket generation (`SCMS-2026-XXXXXX`).
-
-#### Step 2: Staff Persona — Triage & Work Order Generation
-1. Switch persona to **Alex Vance (Staff - IT Dept)**.
-2. Locate the newly assigned ticket in the work queue table.
-3. Click the row to open the **Complaint Detail Drawer**.
-4. Click **"Start Processing Ticket"** (status moves to `IN_PROGRESS`).
-5. Click **"Print Official Work Order"** to preview the formal dispatch ticket with QR code and signature lines.
-6. Click **"Mark Resolved"**, enter technical resolution notes, and confirm.
-
-#### Step 3: Student Persona — Track & Provide 5-Star Feedback
-1. Switch back to **Sarah Chen (Student)**.
-2. Notice the alert: *"You have 1 resolved request awaiting satisfaction feedback!"*.
-3. Click **"Rate Resolution (5 Stars)"**, give 5 stars, enter a comment, and submit.
-4. The ticket officially transitions to **`CLOSED`**.
-
-#### Step 4: Administrator Persona — Institutional Analytics & Governance
-1. Switch persona to **Dr. Eleanor Sterling (Administrator)**.
-2. View the **Executive Dashboard** powered by live MongoDB aggregation queries.
-3. Open **"Category Mappings"** to show real-time department remapping.
-4. Open **"Feedback & CSAT"** to inspect satisfaction ratings.
-5. In the complaints table, click **"Export CSV"** to download the official audit spreadsheet.
-
----
-
-### 🧪 8. Automated Testing Verification (PRD Section 13)
-
-To demonstrate test coverage to examiners, run the Pytest audit suite:
+To verify system compliance against PRD specifications, run the automated test suite:
 
 ```powershell
 cd backend
@@ -208,81 +224,106 @@ $env:PYTHONPATH="."
 .\venv\Scripts\pytest -v tests/test_audit_scenarios.py
 ```
 
-All 16 test scenarios pass with 100% compliance:
+### Verified Test Results (16/16 Passed)
 
-| Test ID | Test Scenario | Verified Result | Status |
+| Test ID | Test Scenario | Verified Behavior | Status |
 | :--- | :--- | :--- | :--- |
-| **T1** | Create a user with valid details | User document saved in MongoDB with bcrypt hash | `PASSED` |
-| **T1 (Security)**| Reject ADMIN registration via public API | Denied with HTTP 422 Unprocessable Entity | `PASSED` |
-| **T2** | Log in with valid credentials | JWT token returned with correct role | `PASSED` |
-| **T3** | Log in with invalid credentials | Rejected with HTTP 401 Unauthorized | `PASSED` |
-| **T4 & T5** | Submit complaint with mapped category | Auto-assigned to IT Department with 24h SLA | `PASSED` |
-| **T6** | Submit unmapped category | Complaint remains `NEW` and flagged for triage | `PASSED` |
-| **T7** | Staff updates complaint status | Status and audit history log saved in MongoDB | `PASSED` |
-| **T8** | Resolve without resolution notes | Validation prevents resolution (HTTP 422) | `PASSED` |
-| **T9** | Resolve with valid notes | Complaint marked `RESOLVED` with timestamp | `PASSED` |
-| **T10** | Submit feedback post-resolution | Feedback linked and ticket closed | `PASSED` |
-| **T11** | Submit duplicate feedback | Duplicate rejected with HTTP 400 | `PASSED` |
-| **T12** | Access another student's complaint | Denied with HTTP 403 Forbidden (IDOR Defense) | `PASSED` |
-| **T13** | Access another department's complaint| Denied with HTTP 403 Forbidden | `PASSED` |
-| **T14** | Open reports and dashboard | Figures match actual MongoDB document counts | `PASSED` |
-| **T15** | Export filtered report to CSV | Formatted CSV stream generated | `PASSED` |
-| **FR-14** | Upload file attachment to complaint | File uploaded & associated (PDF/JPEG check) | `PASSED` |
-| **T17** | Check overdue complaint | Ticket flagged overdue after SLA target in DB | `PASSED` |
+| **T1** | Valid User Registration | User document saved with bcrypt password hash | `PASSED` |
+| **T1 (Sec)** | Reject Unauthorized Admin Registration | Public API blocks creation of ADMIN role (HTTP 422) | `PASSED` |
+| **T2** | Valid Authentication | Returns signed JWT bearer token with assigned role | `PASSED` |
+| **T3** | Invalid Authentication | Rejects incorrect password with HTTP 401 | `PASSED` |
+| **T4 & T5** | Auto-Routing Engine | Maps category to department with correct SLA hours | `PASSED` |
+| **T6** | Unmapped Category Handling | Flags complaint as `NEW` for administrator triage | `PASSED` |
+| **T7** | Lifecycle Status Progression | Updates status and appends immutable audit history | `PASSED` |
+| **T8** | Resolution Note Enforcement | Rejects resolution without notes (HTTP 422) | `PASSED` |
+| **T9** | Valid Resolution | Resolves ticket and sets `resolved_at` timestamp | `PASSED` |
+| **T10** | Feedback & Auto-Closure | Attaches CSAT score and transitions ticket to `CLOSED` | `PASSED` |
+| **T11** | Duplicate Feedback Rejection | Rejects second review on same complaint (HTTP 400) | `PASSED` |
+| **T12** | IDOR Security Boundary | Prevents students from viewing other students' tickets | `PASSED` |
+| **T13** | Department Data Isolation | Prevents staff from accessing other departments' tickets | `PASSED` |
+| **T14** | Dashboard & Aggregations | Metric counts strictly match live database documents | `PASSED` |
+| **T15** | Audit CSV Export | Generates RFC-4180 compliant CSV stream | `PASSED` |
+| **FR-14** | Attachment Uploads | Validates file format and enforces 5 MB size limit | `PASSED` |
+| **T17** | SLA Overdue Inspection | Automatically detects overdue tickets and flags breach | `PASSED` |
 
 ---
 
-### 🐳 9. Docker Container Deployment
+## 🚀 Cloud Deployment (Render)
 
-To run the complete stack inside Docker containers with MongoDB:
+The project includes a root [`render.yaml`](./render.yaml) blueprint for instant cloud deployment:
+
+1. **Connect Repo:** Link this GitHub repository to your Render account.
+2. **New Blueprint:** In Render, click **"New +" → "Blueprint"** and select this repo.
+3. **Configure Secrets:** Set `MONGODB_URI` to your Atlas connection string in the Render Dashboard.
+4. **Deploy:** Render provisions:
+   * **`smartcampus-backend`**: FastAPI Python 3.11 web service.
+   * **`smartcampus-frontend`**: React 19 single-page application with client routing.
+
+---
+
+## 🔐 Security & GitHub Readiness
+
+The repository is pre-configured to guarantee zero credential leakage when pushing to GitHub:
+
+* **Protected Files:** Both `backend/.env` and `frontend/.env` are registered in `.gitignore`.
+* **Sanitized Templates:** Tracked [`backend/.env.example`](./backend/.env.example) and [`frontend/.env.example`](./frontend/.env.example) use safe placeholders.
+* **Exclusion of Binaries:** Virtual environments (`venv/`), databases (`*.db`), node modules (`node_modules/`), and uploaded attachments (`uploads/`) are excluded from version control.
+
+### How to Push to GitHub:
 
 ```powershell
-docker compose up --build
+git add .
+git commit -m "feat: complete Smart Campus system with MongoDB Atlas"
+git branch -M main
+git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+git push -u origin main
 ```
-
-- **MongoDB 7.0 Database:** `localhost:27017` (`smartcampus_db`)
-- **FastAPI Backend Container:** `http://localhost:8000`
-- **React Nginx Frontend Container:** `http://localhost:3000`
 
 ---
 
-### 📁 10. Repository Structure
+## 📁 Project Architecture
 
 ```
 Smart Campus/
-├── Smart_Campus_Service_Management_System_PRD.md   # Official PRD
-├── README.md                                      # Project & Demonstration Runbook
-├── render.yaml                                    # Render deployment blueprint
-├── docker-compose.yml                             # MongoDB, Backend, Frontend
-├── run_all.bat                                    # One-click start script
-├── test_backend.bat                               # One-click test runner
-├── backend/                                       # Python FastAPI Application
-│   ├── requirements.txt                           # PyMongo, FastAPI, Pydantic, Jose, etc.
-│   ├── .env.example                               # MongoDB Atlas environment template
+├── .gitignore                                     # Global git exclusion rules
+├── render.yaml                                    # Render cloud deployment blueprint
+├── docker-compose.yml                             # Docker multi-container specification
+├── run_all.bat                                    # Windows 1-click startup script
+├── test_backend.bat                               # Windows 1-click test runner
+│
+├── backend/                                       # FastAPI Backend
+│   ├── .env                                       # Local secrets (git-ignored)
+│   ├── .env.example                               # Sanitized environment template
+│   ├── requirements.txt                           # PyMongo, FastAPI, Pydantic, etc.
+│   ├── verify_e2e.py                              # Live 7-stage MongoDB E2E runner
+│   ├── app/
+│   │   ├── main.py                                # Application factory, CORS, static uploads
+│   │   ├── core/                                  # Config, database client, security, auth dependencies
+│   │   ├── models/                                # Pydantic V2 models (User, Complaint, etc.)
+│   │   ├── schemas/                               # Request/response DTO schemas
+│   │   ├── services/                              # Routing, lifecycle, overdue, counters, seed
+│   │   └── routers/                               # Auth, complaints, feedback, dashboards, reports
 │   ├── scripts/
 │   │   └── migrate_sql_to_mongo.py                # Idempotent SQL -> MongoDB migration tool
-│   ├── app/
-│   │   ├── core/                                  # config, security (bcrypt/jwt), database (PyMongo), dependencies
-│   │   ├── models/                                # User, Department, Category, Complaint, Feedback, History, Notification
-│   │   ├── schemas/                               # Pydantic V2 schemas
-│   │   ├── services/                              # assignment, lifecycle, overdue, complaint number, seed services
-│   │   ├── routers/                               # auth, complaints, departments, categories, feedback, notifications, dashboards, reports
-│   │   └── main.py                                # Application factory with CORS, uploads, & MongoDB lifespan
-│   ├── tests/                                     # Pytest test suite with mongomock (16 passed)
-│   └── verify_e2e.py                              # Live MongoDB E2E verification script
-└── frontend/                                      # React 19 + TypeScript + Vite + Tailwind CSS
-    ├── src/
-    │   ├── types/index.ts                         # Domain models
-    │   ├── data/mockData.ts                       # Pre-seeded campus records
-    │   ├── services/api.ts                        # Axios/Fetch API client
-    │   ├── context/AppContext.tsx                 # Central state machine & local persistence
-    │   ├── components/
-    │   │   ├── common/                            # MetricCard, PriorityBadge, StatusBadge, Toast
-    │   │   ├── layout/                            # Navbar, Sidebar, CommandPalette, NotificationDrawer
-    │   │   ├── complaints/                        # ComplaintTable, ComplaintDetailModal, WorkOrderModal, RegistrationModal, FeedbackModal
-    │   │   ├── dashboard/                         # AdminDashboard, StaffDashboard, StudentDashboard
-    │   │   └── admin/                             # CategoryMappingView, DepartmentsView, FeedbackAnalyticsView, UserManagementView, SystemSettingsView
-    │   ├── App.tsx                                # Main coordinator
-    │   └── index.css                              # Tailwind tokens
-    └── package.json
+│   └── tests/                                     # Pytest test suite (16 tests)
+│
+└── frontend/                                      # React 19 Frontend
+    ├── .env                                       # Frontend environment (git-ignored)
+    ├── .env.example                               # Frontend environment template
+    ├── package.json                               # Dependencies (Vite 8, Lucide, Recharts)
+    └── src/
+        ├── context/AppContext.tsx                 # Central state machine & connectivity status
+        ├── services/api.ts                        # Typed API client with auto-fallback
+        ├── components/
+        │   ├── layout/                            # Navbar, Sidebar, CommandPalette (Ctrl+K)
+        │   ├── dashboard/                         # AdminDashboard, StaffDashboard, StudentDashboard
+        │   ├── complaints/                        # ComplaintTable, WorkOrderModal, FeedbackModal
+        │   └── admin/                             # CategoryMapping, Departments, FeedbackAnalytics
+        └── data/mockData.ts                       # Pre-seeded institutional campus records
 ```
+
+---
+
+### 👨‍💻 Developed For
+**Smart Campus Academic Mini-Project Demonstration & Evaluation**  
+*Compliant with Section 1 to 18 of the [Smart Campus Service Management System PRD](./Smart_Campus_Service_Management_System_PRD.md).*
