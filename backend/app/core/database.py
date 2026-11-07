@@ -1,5 +1,6 @@
 import logging
 from typing import Generator, Any, Dict, List
+import certifi
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo.database import Database
 from pymongo.errors import OperationFailure, ConfigurationError
@@ -10,19 +11,22 @@ logger = logging.getLogger("smart_campus.database")
 _mongo_client: MongoClient | None = None
 
 def get_client() -> MongoClient:
-    """Singleton MongoDB Client instance with connection pooling."""
+    """Singleton MongoDB Client instance with connection pooling and TLS certificates."""
     global _mongo_client
     if _mongo_client is None:
         logger.info(f"Connecting to MongoDB at {settings.MONGODB_URI.split('@')[-1]} (DB: {settings.MONGODB_DB_NAME})")
-        _mongo_client = MongoClient(
-            settings.MONGODB_URI,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-            socketTimeoutMS=10000,
-            maxPoolSize=50,
-            minPoolSize=5,
-            retryWrites=True
-        )
+        client_kwargs: Dict[str, Any] = {
+            "serverSelectionTimeoutMS": 5000,
+            "connectTimeoutMS": 5000,
+            "socketTimeoutMS": 10000,
+            "maxPoolSize": 50,
+            "minPoolSize": 5,
+            "retryWrites": True,
+        }
+        if "mongodb+srv://" in settings.MONGODB_URI or "ssl=true" in settings.MONGODB_URI.lower() or "tls=true" in settings.MONGODB_URI.lower():
+            client_kwargs["tlsCAFile"] = certifi.where()
+
+        _mongo_client = MongoClient(settings.MONGODB_URI, **client_kwargs)
     return _mongo_client
 
 def get_database() -> Database:

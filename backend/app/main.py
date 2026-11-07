@@ -1,4 +1,5 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,8 @@ from app.routers import (
     reports
 )
 
+logger = logging.getLogger("smart_campus")
+
 # Ensure uploads directory exists for attachments (FR-14)
 UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -26,10 +29,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: connect to MongoDB Atlas / local MongoDB, verify indexes, and seed default data
-    db = get_database()
-    init_mongodb_indexes(db)
-    seed_database_defaults(db)
-    check_and_flag_overdue_complaints(db)
+    try:
+        db = get_database()
+        init_mongodb_indexes(db)
+        seed_database_defaults(db)
+        check_and_flag_overdue_complaints(db)
+        logger.info("MongoDB database connection and seeding initialized successfully.")
+    except Exception as e:
+        logger.error(
+            f"Startup database initialization error: {e}. "
+            "If connecting to MongoDB Atlas, ensure Network Access allows 0.0.0.0/0."
+        )
     yield
     # Shutdown: close MongoDB client pool
     if _mongo_client:
