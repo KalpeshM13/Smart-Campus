@@ -50,10 +50,13 @@ Smart Campus/
 ## 🛠️ Development & Local Setup
 
 ### Quick Start (Windows 1-Click)
+
 Run the automated launcher from the root directory:
+
 ```powershell
 .\run_all.bat
 ```
+
 - **Web Portal:** [http://localhost:5173](http://localhost:5173)
 - **Interactive API Docs (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
@@ -62,6 +65,7 @@ Run the automated launcher from the root directory:
 ### Manual Setup
 
 #### 1. Backend Setup
+
 ```powershell
 cd backend
 
@@ -80,6 +84,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 #### 2. Frontend Setup
+
 ```powershell
 cd frontend
 
@@ -98,12 +103,15 @@ npm run dev
 ## 🧪 Testing
 
 Run backend unit and integration tests:
+
 ```powershell
 cd backend
 $env:PYTHONPATH="."
 .\venv\Scripts\pytest -v tests/test_audit_scenarios.py
 ```
+
 Or use the 1-click test script from the project root:
+
 ```powershell
 .\test_backend.bat
 ```
@@ -114,44 +122,13 @@ Or use the 1-click test script from the project root:
 
 Universal Password: **`CampusSecret2026!`**
 
-| Role | Email | Access Scope |
-| :--- | :--- | :--- |
-| **Administrator** | `dean.sterling@smartcampus.edu` | System configuration, live analytics, department & category management |
-| **Department Staff** | `alex.vance@it.smartcampus.edu` | Assigned department queue, work orders, ticket resolution with notes |
-| **Student** | `sarah.chen@student.smartcampus.edu` | Register tickets, track SLA countdown, submit CSAT feedback |
-| **Faculty** | `r.miller@smartcampus.edu` | Register departmental and classroom service requests |
+| Role                 | Email                                | Access Scope                                                           |
+| :------------------- | :----------------------------------- | :--------------------------------------------------------------------- |
+| **Administrator**    | `dean.sterling@smartcampus.edu`      | System configuration, live analytics, department & category management |
+| **Department Staff** | `alex.vance@it.smartcampus.edu`      | Assigned department queue, work orders, ticket resolution with notes   |
+| **Student**          | `sarah.chen@student.smartcampus.edu` | Register tickets, track SLA countdown, submit CSAT feedback            |
+| **Faculty**          | `r.miller@smartcampus.edu`           | Register departmental and classroom service requests                   |
 
-*(You can also use the **Persona Switcher** dropdown in the top-right navbar to switch roles instantly)*
-
----
-
-## 🌐 Deployment (Render)
-
-This repository includes a [`render.yaml`](./render.yaml) blueprint for 1-click deployment on [Render](https://render.com):
-
-1. Link your GitHub repository to your Render account.
-2. In Render, select **"New +" → "Blueprint"** and select this repository.
-3. Configure the environment variables:
-   - `MONGODB_URI`: Your MongoDB Atlas connection URI.
-   - `SECRET_KEY`: A secure random string for JWT authentication.
-4. Render provisions:
-   - **`smartcampus-backend`**: FastAPI Python 3.11 web service.
-   - **`smartcampus-frontend`**: React static site (`dist` folder).
+_(You can also use the **Persona Switcher** dropdown in the top-right navbar to switch roles instantly)_
 
 ---
-
-## 🔐 Environment Variables Reference
-
-### Backend (`backend/.env`)
-```env
-MONGODB_URI="mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority"
-MONGODB_DB_NAME="smartcampus_db"
-SECRET_KEY="your-secret-key-here"
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
-```
-
-### Frontend (`frontend/.env`)
-```env
-VITE_API_BASE_URL="http://localhost:8000"
-```
