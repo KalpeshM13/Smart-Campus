@@ -49,6 +49,9 @@ Smart Campus/
 
 ## 🛠️ Development & Local Setup
 
+> [!IMPORTANT]
+> **Environment Files:** Both `backend/` and `frontend/` directories already contain a pre-configured `.env.example` template. Before running the project, create your own `.env` file in each folder by copying `.env.example` and filling in your credentials (such as your `MONGODB_URI` and `SECRET_KEY`).
+
 ### Quick Start (Windows 1-Click)
 
 Run the automated launcher from the root directory:
@@ -76,8 +79,9 @@ python -m venv venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment variables (copy template)
+# Create your own .env from the existing .env.example template
 cp .env.example .env
+# (Open .env and add your MONGODB_URI and SECRET_KEY)
 
 # Start FastAPI server
 uvicorn app.main:app --reload --port 8000
@@ -91,8 +95,9 @@ cd frontend
 # Install dependencies
 npm install
 
-# Configure environment variables (copy template)
+# Create your own .env from the existing .env.example template
 cp .env.example .env
+# (Open .env and set VITE_API_BASE_URL, default: http://localhost:8000)
 
 # Start Vite dev server
 npm run dev
