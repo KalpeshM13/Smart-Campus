@@ -92,6 +92,17 @@ app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(dashboards.router, prefix=settings.API_V1_STR)
 app.include_router(reports.router, prefix=settings.API_V1_STR)
 
+@app.get("/")
+def root():
+    """Root endpoint providing service status and quick links."""
+    return {
+        "service": settings.PROJECT_NAME,
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health",
+        "version": "1.0.0"
+    }
+
 @app.get("/health")
 def health_check():
     """Service health check endpoint verifying MongoDB database connectivity."""
