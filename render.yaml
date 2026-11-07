@@ -28,6 +28,7 @@ services:
   - type: web
     name: smartcampus-frontend
     runtime: static
+
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
