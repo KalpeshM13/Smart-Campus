@@ -131,10 +131,8 @@ def create_complaint(
         updated_at=now
     )
 
-    # 3. Automated Category-to-Department Routing Engine (FR-05)
-    route_complaint(db=db, category=category, complaint=complaint, creator=current_user)
-
-    # 4. Synchronize with Salesforce Service Cloud as System of Record (PRD v2.1)
+    # 3. Synchronize with Salesforce Service Cloud as System of Record (PRD v2.1)
+    # Create the authoritative Case first so the MongoDB document shares the exact Salesforce ID
     try:
         from app.integrations.salesforce import get_salesforce_service
         sf_service = get_salesforce_service()
@@ -150,15 +148,22 @@ def create_complaint(
             requester_name=current_user.full_name,
             requester_email=current_user.email
         )
-        complaint.salesforce_case_id = sf_case.get("Id")
-        complaint.salesforce_case_number = sf_case.get("CaseNumber")
-        complaint.queue_name = sf_case.get("Queue_Name__c")
+        if sf_case and sf_case.get("Id"):
+            complaint.id = sf_case.get("Id")
+            complaint.salesforce_case_id = sf_case.get("Id")
+        if sf_case and sf_case.get("CaseNumber"):
+            complaint.salesforce_case_number = sf_case.get("CaseNumber")
+        if sf_case and sf_case.get("Queue_Name__c"):
+            complaint.queue_name = sf_case.get("Queue_Name__c")
     except Exception as e:
         import logging
         logging.getLogger("smart_campus.salesforce").error(f"Salesforce Case synchronization error: {e}", exc_info=True)
 
-    # 5. Save complaint document to MongoDB
-    db.complaints.insert_one(complaint.to_mongo())
+    # 4. Automated Category-to-Department Routing Engine (FR-05)
+    route_complaint(db=db, category=category, complaint=complaint, creator=current_user)
+
+    # 5. Save single authoritative complaint document to MongoDB (upsert by _id)
+    db.complaints.replace_one({"_id": complaint.id}, complaint.to_mongo(), upsert=True)
 
     return _enrich_complaint_response(complaint, db)
 

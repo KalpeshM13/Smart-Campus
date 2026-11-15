@@ -191,7 +191,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ]);
       if (depts && depts.length > 0) setDepartments(depts);
       if (cats && cats.length > 0) setCategories(cats);
-      if (cmps) setComplaints(cmps);
+      if (cmps) {
+        // Defensive deduplication by salesforceCaseId or id
+        const seen = new Set<string>();
+        const uniqueCmps = cmps.filter((c) => {
+          const key = c.salesforceCaseId || c.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setComplaints(uniqueCmps);
+      }
     } catch (err) {
       console.warn('Backend sync poll notice:', err);
     }
@@ -265,7 +275,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           attachmentName: data.attachmentName,
         });
 
-        setComplaints((prev) => [created, ...prev]);
+        setComplaints((prev) => [
+          created,
+          ...prev.filter(
+            (c) =>
+              c.id !== created.id &&
+              (!created.salesforceCaseId || c.salesforceCaseId !== created.salesforceCaseId)
+          ),
+        ]);
 
         // Create in-app notification
         const newNotif: NotificationItem = {

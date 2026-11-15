@@ -160,13 +160,40 @@ class SalesforceSyncEngine:
             subject = rec.get("Subject") or f"Salesforce Service Case {case_number}"
             description = rec.get("Description") or subject
 
-            # Determine creator
+            # Deduplication check: inspect if this Case already exists in MongoDB
+            existing = db.complaints.find_one({
+                "$or": [
+                    {"_id": sf_id},
+                    {"id": sf_id},
+                    {"salesforce_case_id": sf_id}
+                ]
+            })
+
+            # If an existing record was stored under an older UUID _id, migrate references and remove the duplicate
+            if existing and str(existing.get("_id")) != sf_id:
+                old_id = existing["_id"]
+                logger.info(f"Removing duplicate complaint document {old_id} in favor of authoritative {sf_id}")
+                db.complaints.delete_one({"_id": old_id})
+                db.complaint_history.update_many({"complaint_id": old_id}, {"$set": {"complaint_id": sf_id}})
+                db.feedback.update_many({"complaint_id": old_id}, {"$set": {"complaint_id": sf_id}})
+                db.notifications.update_many({"complaint_id": old_id}, {"$set": {"complaint_id": sf_id}})
+
+            # Authoritative complaint number: preserve campus tracking format SCMS-2026-XXXXXX
+            if existing and existing.get("complaint_number") and str(existing["complaint_number"]).startswith("SCMS-"):
+                complaint_num = existing["complaint_number"]
+            elif case_number and str(case_number).isdigit():
+                complaint_num = f"SCMS-2026-{int(case_number):06d}"
+            else:
+                complaint_num = case_number
+
+            # Determine creator (preserve existing student/faculty creator)
             supplied_email = rec.get("SuppliedEmail")
-            created_by = (
-                users_by_email.get(supplied_email.lower())
-                if supplied_email and supplied_email.lower() in users_by_email
-                else default_student_id
-            )
+            if existing and existing.get("created_by"):
+                created_by = existing["created_by"]
+            elif supplied_email and supplied_email.lower() in users_by_email:
+                created_by = users_by_email[supplied_email.lower()]
+            else:
+                created_by = default_student_id
 
             # Map status
             raw_status = rec.get("Status", "New")
@@ -190,7 +217,7 @@ class SalesforceSyncEngine:
             created_at = (
                 datetime.fromisoformat(created_date_str.replace("Z", "+00:00"))
                 if created_date_str
-                else now
+                else (existing.get("created_at") if existing else now)
             )
             modified_date_str = rec.get("LastModifiedDate")
             updated_at = (
@@ -204,34 +231,35 @@ class SalesforceSyncEngine:
 
             location_str = rec.get("Campus_Location__c")
             if not location_str:
-                bldg = rec.get("Building__c") or "Campus Facility"
-                rm = rec.get("Room__c") or "General Area"
+                bldg = rec.get("Building__c") or (existing.get("building") if existing else "Campus Facility")
+                rm = rec.get("Room__c") or (existing.get("room") if existing else "General Area")
                 location_str = f"{bldg} - {rm}"
 
             doc = {
                 "_id": sf_id,
                 "id": sf_id,
-                "complaint_number": case_number,
+                "complaint_number": complaint_num,
                 "title": subject,
                 "description": description,
-                "category_id": rec.get("Complaint_Category__c") or "cat-other",
-                "assigned_department_id": rec.get("Department__c") or "dept-admin",
+                "category_id": rec.get("Complaint_Category__c") or (existing.get("category_id") if existing else "cat-other"),
+                "assigned_department_id": rec.get("Department__c") or (existing.get("assigned_department_id") if existing else "dept-admin"),
                 "priority": priority_val,
                 "status": status_val,
                 "created_by": created_by,
                 "campus": "Main University Campus",
-                "building": rec.get("Building__c"),
-                "room": rec.get("Room__c"),
+                "building": rec.get("Building__c") or (existing.get("building") if existing else None),
+                "room": rec.get("Room__c") or (existing.get("room") if existing else None),
                 "location": location_str,
-                "resolution_notes": rec.get("Resolution_Notes__c"),
-                "hold_reason": rec.get("Hold_Reason__c"),
+                "resolution_notes": rec.get("Resolution_Notes__c") or (existing.get("resolution_notes") if existing else None),
+                "hold_reason": rec.get("Hold_Reason__c") or (existing.get("hold_reason") if existing else None),
                 "salesforce_case_id": sf_id,
-                "queue_name": queue_name,
+                "salesforce_case_number": case_number,
+                "queue_name": queue_name or (existing.get("queue_name") if existing else None),
                 "sla_target_hours": 24,
                 "is_overdue": bool(rec.get("Is_Overdue__c", False)),
                 "created_at": created_at,
                 "updated_at": updated_at,
-                "resolved_at": updated_at if status_val in ("RESOLVED", "CLOSED") else None
+                "resolved_at": updated_at if status_val in ("RESOLVED", "CLOSED") else (existing.get("resolved_at") if existing else None)
             }
 
             db.complaints.replace_one({"_id": sf_id}, doc, upsert=True)
