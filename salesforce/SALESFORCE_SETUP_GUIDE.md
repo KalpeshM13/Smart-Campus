@@ -233,3 +233,4 @@ To allow the FastAPI backend to securely query and mutate Cases:
 2. In **Reports Tab**:
    - Create report: `Campus Complaints by Department & SLA Status`.
    - Create report: `CSAT Feedback Ratings Summary`.
+
