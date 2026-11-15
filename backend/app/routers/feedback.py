@@ -82,6 +82,21 @@ def submit_feedback(
         {"$set": {"status": ComplaintStatus.CLOSED.value, "updated_at": now}}
     )
 
+    # Synchronize feedback with Salesforce Service Cloud (PRD v2.1)
+    if complaint.salesforce_case_id:
+        try:
+            from app.integrations.salesforce import get_salesforce_service
+            sf_service = get_salesforce_service()
+            sf_service.submit_feedback(
+                case_id=complaint.salesforce_case_id,
+                rating=payload.rating,
+                comments=payload.comments,
+                requester_id=current_user.id
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger("smart_campus.salesforce").warning(f"Salesforce Feedback synchronization notice: {e}")
+
     return FeedbackResponse(
         id=fb.id,
         complaint_id=fb.complaint_id,

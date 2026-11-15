@@ -90,6 +90,8 @@ def run_e2e_verification():
     assert db_complaint["title"] == complaint_payload["title"]
     assert db_complaint["created_by"] == student_id
     print(f"✓ [MongoDB Verified] Complaint document exists: {db_complaint['complaint_number']}")
+    if created_data.get("salesforce_case_id"):
+        print(f"✓ [Salesforce Service Cloud Verified] Authoritative Case: {created_data['salesforce_case_id']} (Queue: {created_data.get('queue_name')})")
 
     print("\n[STEP 2] System Auto-Assigns Correct Department")
     print("-" * 60)

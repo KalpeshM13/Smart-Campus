@@ -40,6 +40,10 @@ class Complaint(BaseModel):
     attachment_name: Optional[str] = None
     attachment_path: Optional[str] = None
     
+    # Salesforce Service Cloud System of Record Link
+    salesforce_case_id: Optional[str] = None
+    queue_name: Optional[str] = None
+    
     sla_target_hours: int = 24
     is_overdue: bool = False
     

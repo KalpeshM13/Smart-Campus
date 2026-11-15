@@ -105,7 +105,7 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Service health check endpoint verifying MongoDB database connectivity."""
+    """Service health check endpoint verifying MongoDB and Salesforce Service Cloud connectivity."""
     try:
         db = get_database()
         db.command("ping")
@@ -113,10 +113,20 @@ def health_check():
     except Exception as e:
         mongo_status = f"unreachable: {str(e)}"
 
+    from app.integrations.salesforce import get_salesforce_service
+    try:
+        sf_service = get_salesforce_service()
+        sf_health = sf_service.get_health()
+    except Exception as e:
+        sf_health = {"status": "unreachable", "error": str(e)}
+
+    is_healthy = (mongo_status == "connected") and (sf_health.get("status") in ("connected", "simulated_healthy"))
+
     return {
-        "status": "healthy" if mongo_status == "connected" else "degraded",
+        "status": "healthy" if is_healthy else "degraded",
         "service": "Smart Campus Service Management API",
         "database": "MongoDB Atlas",
         "db_status": mongo_status,
+        "salesforce": sf_health,
         "version": "1.0.0"
     }

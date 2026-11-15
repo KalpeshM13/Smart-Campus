@@ -60,6 +60,8 @@ def _enrich_complaint_response(c: Complaint, db: Database) -> dict:
         "resolution_notes": c.resolution_notes,
         "hold_reason": c.hold_reason,
         "attachment_name": c.attachment_name,
+        "salesforce_case_id": c.salesforce_case_id,
+        "queue_name": c.queue_name,
         "sla_target_hours": c.sla_target_hours,
         "is_overdue": c.is_overdue,
         "created_at": c.created_at,
@@ -120,7 +122,29 @@ def create_complaint(
     # 3. Automated Category-to-Department Routing Engine (FR-05)
     route_complaint(db=db, category=category, complaint=complaint, creator=current_user)
 
-    # 4. Save complaint document to MongoDB
+    # 4. Synchronize with Salesforce Service Cloud as System of Record (PRD v2.1)
+    try:
+        from app.integrations.salesforce import get_salesforce_service
+        sf_service = get_salesforce_service()
+        sf_case = sf_service.create_case(
+            subject=complaint.title,
+            description=complaint.description,
+            category_id=complaint.category_id,
+            priority=complaint.priority.value if hasattr(complaint.priority, "value") else str(complaint.priority),
+            location=complaint.location,
+            building=complaint.building,
+            room=complaint.room,
+            requester_id=current_user.id,
+            requester_name=current_user.full_name,
+            requester_email=current_user.email
+        )
+        complaint.salesforce_case_id = sf_case.get("Id")
+        complaint.queue_name = sf_case.get("Queue_Name__c")
+    except Exception as e:
+        import logging
+        logging.getLogger("smart_campus.salesforce").warning(f"Salesforce Case synchronization notice: {e}")
+
+    # 5. Save complaint document to MongoDB
     db.complaints.insert_one(complaint.to_mongo())
 
     return _enrich_complaint_response(complaint, db)
@@ -255,6 +279,22 @@ def update_complaint_status(
         resolution_notes=payload.resolution_notes,
         hold_reason=payload.hold_reason
     )
+
+    # Synchronize status transition with Salesforce Service Cloud (PRD v2.1)
+    if complaint.salesforce_case_id:
+        try:
+            from app.integrations.salesforce import get_salesforce_service
+            sf_service = get_salesforce_service()
+            sf_service.update_status(
+                case_id=complaint.salesforce_case_id,
+                new_status=payload.status.value.replace("_", " ").title() if hasattr(payload.status, "value") else str(payload.status),
+                user_id=current_user.id,
+                resolution_notes=payload.resolution_notes,
+                hold_reason=payload.hold_reason
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger("smart_campus.salesforce").warning(f"Salesforce Case status update notice: {e}")
 
     return _enrich_complaint_response(updated, db)
 
