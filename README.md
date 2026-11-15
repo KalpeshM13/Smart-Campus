@@ -7,7 +7,8 @@ An enterprise service management and ticket automation platform designed for uni
 ## 🚀 Tech Stack
 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Recharts
-- **Backend:** FastAPI (Python 3.11), Pydantic v2, PyMongo
+- **Case Management & System of Record:** Salesforce Service Cloud (Cases, Queues, Record-Triggered Flows, Connected App OAuth 2.0, Mock Sandbox Provider)
+- **Backend Integration Gateway:** FastAPI (Python 3.11), Pydantic v2, PyMongo / Salesforce REST Client
 - **Database:** MongoDB Atlas (Cloud) / Local MongoDB
 - **Authentication:** JWT Bearer tokens with Role-Based Access Control (RBAC)
 - **Deployment:** Render / Docker
@@ -23,15 +24,20 @@ Smart Campus/
 ├── render.yaml               # Render cloud deployment blueprint
 ├── docker-compose.yml        # Docker configuration
 │
-├── backend/                  # FastAPI Backend
+├── salesforce/               # Salesforce Service Cloud Deployment Blueprints
+│   ├── SALESFORCE_SETUP_GUIDE.md # Admin setup: Queues, Validation Rules, Flows, Connected App
+│   └── metadata/             # Custom object XML definitions (Department, Category, Feedback)
+│
+├── backend/                  # FastAPI Integration Gateway
 │   ├── app/
 │   │   ├── core/             # Database client, security, config
+│   │   ├── integrations/     # Salesforce REST client & Sandbox Mock Provider
 │   │   ├── models/           # Pydantic v2 data models
 │   │   ├── routers/          # API endpoints (auth, complaints, dashboards, etc.)
 │   │   ├── schemas/          # Pydantic request/response schemas
 │   │   └── services/         # Business logic (auto-assignment, SLA, lifecycle)
 │   ├── scripts/              # Migration and seed scripts
-│   ├── tests/                # Automated Pytest suite
+│   ├── tests/                # Automated Pytest suite (Audit + Salesforce Integration)
 │   ├── requirements.txt      # Python dependencies
 │   └── .env.example          # Backend environment template
 │
@@ -107,12 +113,12 @@ npm run dev
 
 ## 🧪 Testing
 
-Run backend unit and integration tests:
+Run backend unit, audit, and Salesforce integration tests:
 
 ```powershell
 cd backend
 $env:PYTHONPATH="."
-.\venv\Scripts\pytest -v tests/test_audit_scenarios.py
+.\venv\Scripts\pytest -v tests/test_salesforce_integration.py tests/test_audit_scenarios.py
 ```
 
 Or use the 1-click test script from the project root:
