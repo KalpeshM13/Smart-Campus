@@ -8,7 +8,10 @@ import {
   Priority,
 } from '../types';
 
-const RAW_API_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://localhost:8000';
+const RAW_API_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  'http://localhost:8000';
 const BACKEND_URL = RAW_API_URL.replace(/\/+$/, '');
 const API_BASE_URL = BACKEND_URL.endsWith('/api') ? BACKEND_URL : `${BACKEND_URL}/api`;
 const HEALTH_URL = BACKEND_BASE_HEALTH_URL(BACKEND_URL);
