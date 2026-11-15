@@ -3,9 +3,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install python dependencies directly (pre-compiled binary wheels, zero apt downloads)
+# Install python dependencies with generous timeout and retries for resilient builds on any connection speed
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=1000 --retries=10 -r requirements.txt
 
 # Copy application source
 COPY . .
