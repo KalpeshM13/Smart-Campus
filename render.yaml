@@ -24,6 +24,22 @@ services:
         value: 72
       - key: SLA_HOURS_LOW
         value: 120
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: SALESFORCE_ENABLED
+        value: "true"
+      - key: SALESFORCE_MOCK_MODE
+        value: "false"
+      - key: SALESFORCE_AUTH_TYPE
+        value: "client_credentials"
+      - key: SALESFORCE_LOGIN_URL
+        value: "https://login.salesforce.com"
+      - key: SALESFORCE_INSTANCE_URL
+        sync: false # Set in Render Dashboard: e.g. https://your-domain.my.salesforce.com
+      - key: SALESFORCE_CLIENT_ID
+        sync: false # Set in Render Dashboard: Connected App Consumer Key
+      - key: SALESFORCE_CLIENT_SECRET
+        sync: false # Set in Render Dashboard: Connected App Consumer Secret
 
   # React Single Page Application Frontend
   - type: web

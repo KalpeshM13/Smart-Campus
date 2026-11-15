@@ -1,6 +1,6 @@
-# ==========================================
-# Secrets and Environment Variables
-# ==========================================
+# ==============================================================================
+# SECRETS, CONFIGURATION & ENVIRONMENT VARIABLES
+# ==============================================================================
 .env
 .env.*
 *.env
@@ -11,14 +11,14 @@ frontend/.env
 *.cert
 *.crt
 
-# Keep environment example files tracked
+# Keep documentation example environment files tracked
 !.env.example
 !backend/.env.example
 !frontend/.env.example
 
-# ==========================================
-# Python & Virtual Environments
-# ==========================================
+# ==============================================================================
+# PYTHON & VIRTUAL ENVIRONMENTS
+# ==============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,7 +50,7 @@ env.bak/
 venv.bak/
 backend/venv/
 
-# Testing & Coverage
+# Pytest, Coverage & Diagnostics
 .pytest_cache/
 backend/.pytest_cache/
 .coverage
@@ -61,9 +61,9 @@ coverage.xml
 *.cover
 *.log
 
-# ==========================================
-# Node.js & Frontend Build Outputs
-# ==========================================
+# ==============================================================================
+# NODE.JS & FRONTEND BUILD ARTIFACTS
+# ==============================================================================
 node_modules/
 frontend/node_modules/
 dist/
@@ -72,10 +72,12 @@ frontend/dist-ssr/
 *.local
 .npm
 .vite/
+frontend/.vite/
 *.tsbuildinfo
+.eslintcache
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -83,13 +85,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# ==========================================
-# Database & Uploaded Media Files
-# ==========================================
+# ==============================================================================
+# DATABASES, UPLOADS & RUNTIME ASSETS
+# ==============================================================================
 *.db
 *.sqlite
 *.sqlite3
 backend/*.db
+backend/smart_campus.db
 uploads/
 backend/uploads/
 *.pdf
@@ -101,9 +104,9 @@ backend/uploads/
 !frontend/src/assets/**
 !frontend/public/**
 
-# ==========================================
-# Operating System & IDE Configs
-# ==========================================
+# ==============================================================================
+# OPERATING SYSTEM & IDE ARTIFACTS
+# ==============================================================================
 .DS_Store
 Thumbs.db
 Desktop.ini
@@ -113,5 +116,9 @@ Desktop.ini
 *.sublime-workspace
 *.swp
 *.swo
+*.orig
+*.rej
 
+# Scratch & Internal Docs
+scratch/
 Smart_Campus_Service_Management_System_PRD.md

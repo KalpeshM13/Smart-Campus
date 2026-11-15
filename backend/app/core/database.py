@@ -8,6 +8,16 @@ from app.core.config import settings
 
 logger = logging.getLogger("smart_campus.database")
 
+# Ensure robust DNS resolution for MongoDB Atlas SRV connection strings
+try:
+    import dns.resolver
+    dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+    dns.resolver.default_resolver.nameservers = ["8.8.8.8", "1.1.1.1", "8.8.4.4"]
+    dns.resolver.default_resolver.lifetime = 15.0
+    dns.resolver.default_resolver.timeout = 10.0
+except Exception:
+    pass
+
 _mongo_client: MongoClient | None = None
 
 def get_client() -> MongoClient:

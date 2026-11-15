@@ -277,6 +277,14 @@ class SalesforceService:
             "Submitted_Date__c": datetime.now(timezone.utc).isoformat()
         }
         feedback_id = self.client.create_record("Complaint_Feedback__c", feedback_fields)
+
+        # Transition Case to Closed in Salesforce Cloud upon feedback submission
+        try:
+            self.client.update_record("Case", case_id, {"Status": "Closed"})
+            logger.info(f"Transitioned Salesforce Case {case_id} to Closed upon feedback submission.")
+        except Exception as e:
+            logger.warning(f"Notice updating Salesforce Case {case_id} to Closed: {e}")
+
         return {
             "id": feedback_id,
             "case_id": case_id,

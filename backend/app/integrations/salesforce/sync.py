@@ -227,6 +227,11 @@ class SalesforceSyncEngine:
             }
             status_val = status_map.get(raw_status, raw_status.upper().replace(" ", "_"))
 
+            # If feedback exists for this complaint in MongoDB, enforce CLOSED status
+            fb_exists = db.feedback.find_one({"complaint_id": sf_id})
+            if fb_exists:
+                status_val = "CLOSED"
+
             # Map priority
             raw_priority = (rec.get("Priority") or "Medium").upper()
             priority_val = raw_priority if raw_priority in ("LOW", "MEDIUM", "HIGH") else "MEDIUM"

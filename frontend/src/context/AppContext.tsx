@@ -111,13 +111,16 @@ function deduplicateComplaints(list: Complaint[]): Complaint[] {
   const result: Complaint[] = [];
 
   for (const c of list) {
-    // 1. Direct key match: Salesforce Case ID or internal ID
+    // 1. Direct key match: Salesforce Case ID, ticket number, or internal ID
+    const idKey = c.id ? `id-${c.id}` : null;
     const sfKey = c.salesforceCaseId ? `sf-${c.salesforceCaseId}` : null;
-    const sfNumKey = c.salesforceCaseNumber ? `num-${c.salesforceCaseNumber}` : null;
+    const sfNumKey = c.salesforceCaseNumber ? `sfnum-${c.salesforceCaseNumber}` : null;
     const cmpNumKey = c.complaintNumber ? `cmp-${c.complaintNumber}` : null;
 
+    if (idKey && seenKeys.has(idKey)) continue;
     if (sfKey && seenKeys.has(sfKey)) continue;
     if (sfNumKey && seenKeys.has(sfNumKey)) continue;
+    if (cmpNumKey && seenKeys.has(cmpNumKey)) continue;
 
     // 2. Semantic matching: same title + same requester
     const titleNorm = (c.title || '').trim().toLowerCase();
@@ -128,6 +131,7 @@ function deduplicateComplaints(list: Complaint[]): Complaint[] {
       continue;
     }
 
+    if (idKey) seenKeys.add(idKey);
     if (sfKey) seenKeys.add(sfKey);
     if (sfNumKey) seenKeys.add(sfNumKey);
     if (cmpNumKey) seenKeys.add(cmpNumKey);
@@ -599,19 +603,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // FR-09: Feedback submission
   const submitFeedback = async (complaintId: string, rating: number, comments: string): Promise<void> => {
-    if (isBackendConnected) {
-      try {
-        await api.login(currentUser.email, 'CampusSecret2026!');
-        await api.submitFeedback(complaintId, rating, comments);
-        await refreshBackendData();
-        showToast('CSAT feedback submitted to Salesforce and ticket closed!', 'success');
-        return;
-      } catch (err: any) {
-        console.error('Failed to submit feedback to Salesforce:', err);
-        showToast(`Salesforce feedback notice: ${err.message}`, 'error');
-      }
-    }
-
     const now = new Date().toISOString();
     const fb: Feedback = {
       id: `fb-${Date.now()}`,
@@ -623,33 +614,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: now,
     };
 
+    // Optimistically update complaint status to CLOSED with feedback attached
     setComplaints((prev) =>
       prev.map((c) => {
-        if (c.id === complaintId) {
+        if (c.id === complaintId || c.salesforceCaseId === complaintId) {
+          const updatedHistory = [
+            ...c.history,
+            {
+              id: `hist-${Date.now()}`,
+              complaintId: c.id,
+              changedByName: currentUser.fullName,
+              changedByRole: currentUser.role,
+              previousStatus: c.status,
+              newStatus: 'CLOSED' as ComplaintStatus,
+              remarks: `Requester provided ${rating}-star CSAT rating. Ticket officially closed.`,
+              createdAt: now,
+            },
+          ];
           return {
             ...c,
             feedback: fb,
-            status: 'CLOSED', // Requester feedback closes complaint
-            history: [
-              ...c.history,
-              {
-                id: `hist-${Date.now()}`,
-                complaintId: c.id,
-                changedByName: currentUser.fullName,
-                changedByRole: currentUser.role,
-                previousStatus: c.status,
-                newStatus: 'CLOSED',
-                remarks: `Requester provided ${rating}-star CSAT rating. Ticket officially closed.`,
-                createdAt: now,
-              },
-            ],
+            status: 'CLOSED' as ComplaintStatus,
+            updatedAt: now,
+            history: updatedHistory,
           };
         }
         return c;
       })
     );
 
-    showToast('Thank you! Your feedback has been recorded.', 'success');
+    if (selectedComplaint && (selectedComplaint.id === complaintId || selectedComplaint.salesforceCaseId === complaintId)) {
+      setSelectedComplaint((prev) =>
+        prev
+          ? {
+              ...prev,
+              feedback: fb,
+              status: 'CLOSED' as ComplaintStatus,
+              updatedAt: now,
+            }
+          : null
+      );
+    }
+
+    if (isBackendConnected) {
+      try {
+        await api.login(currentUser.email, 'CampusSecret2026!');
+        await api.submitFeedback(complaintId, rating, comments);
+        await refreshBackendData();
+        showToast('CSAT feedback submitted to Salesforce and ticket closed!', 'success');
+        return;
+      } catch (err: any) {
+        console.error('Failed to submit feedback to Salesforce:', err);
+        showToast(`Salesforce feedback notice: ${err.message}`, 'error');
+      }
+    } else {
+      showToast('Feedback submitted locally (offline mode) and ticket closed!', 'success');
+    }
   };
 
   // Mapping updates
