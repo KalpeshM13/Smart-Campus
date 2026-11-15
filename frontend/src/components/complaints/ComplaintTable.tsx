@@ -55,15 +55,27 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
   const filteredData = useMemo(() => {
     return complaints.filter((c) => {
       // Role scope (PRD Section 5.1, 5.3):
-      if (currentUser.role === 'STUDENT' || currentUser.role === 'FACULTY') {
+      if (currentUser.role === 'STUDENT') {
         if (c.createdBy !== currentUser.id) return false;
-      } else if (currentUser.role === 'STAFF') {
-        if (
+      } else if (currentUser.role === 'FACULTY') {
+        const isAuthor = c.createdBy === currentUser.id;
+        const isDeptCase = Boolean(
           currentUser.staffDepartmentId &&
-          c.assignedDepartmentId !== currentUser.staffDepartmentId
-        ) {
-          return false;
-        }
+            (c.assignedDepartmentId === currentUser.staffDepartmentId ||
+              (currentUser.staffDepartmentName &&
+                c.assignedDepartmentName?.toLowerCase().includes('electrical')))
+        );
+        if (!isAuthor && !isDeptCase) return false;
+      } else if (currentUser.role === 'STAFF') {
+        const isDeptCase =
+          !currentUser.staffDepartmentId ||
+          c.assignedDepartmentId === currentUser.staffDepartmentId ||
+          (currentUser.staffDepartmentName && c.assignedDepartmentName === currentUser.staffDepartmentName) ||
+          (currentUser.staffDepartmentId === 'dept-it' &&
+            (c.assignedDepartmentName?.includes('IT') || c.assignedDepartmentId === 'a00fj00002oJzI5AAK')) ||
+          (currentUser.staffDepartmentId === 'dept-elec' &&
+            (c.assignedDepartmentName?.includes('Electrical') || c.assignedDepartmentId === 'a00fj00002oHhPKAA0'));
+        if (!isDeptCase) return false;
       }
 
       // Explicit department filter

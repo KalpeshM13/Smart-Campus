@@ -37,6 +37,20 @@ def _enrich_complaint_response(c: Complaint, db: Database) -> dict:
     if c.assigned_staff_id:
         staff_doc = db.users.find_one({"$or": [{"_id": c.assigned_staff_id}, {"id": c.assigned_staff_id}]})
 
+    fb_doc = db.feedback.find_one({"$or": [{"complaint_id": c.id}, {"complaint_id": c.salesforce_case_id}]})
+    feedback_data = None
+    if fb_doc:
+        fb_user = db.users.find_one({"$or": [{"_id": fb_doc.get("user_id")}, {"id": fb_doc.get("user_id")}]})
+        feedback_data = {
+            "id": str(fb_doc.get("id") or fb_doc.get("_id")),
+            "complaint_id": c.id,
+            "user_id": fb_doc.get("user_id"),
+            "user_name": fb_user.get("full_name") if fb_user else "Requester",
+            "rating": fb_doc.get("rating"),
+            "comments": fb_doc.get("comments"),
+            "created_at": fb_doc.get("created_at")
+        }
+
     return {
         "id": c.id,
         "complaint_number": c.complaint_number,
@@ -68,6 +82,7 @@ def _enrich_complaint_response(c: Complaint, db: Database) -> dict:
         "created_at": c.created_at,
         "updated_at": c.updated_at,
         "resolved_at": c.resolved_at,
+        "feedback": feedback_data,
     }
 
 @router.post("", response_model=ComplaintResponse, status_code=status.HTTP_201_CREATED)
@@ -184,8 +199,17 @@ def get_complaints(
     filter_criteria = {}
 
     # Authorization Boundaries (PRD Section 5.1 & Section 10)
-    if current_user.role in [Role.STUDENT, Role.FACULTY]:
+    if current_user.role == Role.STUDENT:
         filter_criteria["created_by"] = current_user.id
+    elif current_user.role == Role.FACULTY:
+        # Faculty can view complaints they submitted OR complaints assigned to their academic department
+        if current_user.staff_department_id:
+            filter_criteria["$or"] = [
+                {"created_by": current_user.id},
+                {"assigned_department_id": current_user.staff_department_id}
+            ]
+        else:
+            filter_criteria["created_by"] = current_user.id
     elif current_user.role == Role.STAFF:
         if current_user.staff_department_id:
             filter_criteria["assigned_department_id"] = current_user.staff_department_id

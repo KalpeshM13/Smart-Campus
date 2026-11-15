@@ -181,7 +181,10 @@ class SalesforceSyncEngine:
                 "$or": [
                     {"_id": sf_id},
                     {"id": sf_id},
-                    {"salesforce_case_id": sf_id}
+                    {"salesforce_case_id": sf_id},
+                    {"salesforce_case_number": case_number},
+                    {"complaint_number": case_number},
+                    {"title": subject, "description": description}
                 ]
             })
 
@@ -200,7 +203,7 @@ class SalesforceSyncEngine:
             elif case_number and str(case_number).isdigit():
                 complaint_num = f"SCMS-2026-{int(case_number):06d}"
             else:
-                complaint_num = case_number
+                complaint_num = f"SCMS-2026-{case_number}"
 
             # Determine creator (preserve existing student/faculty creator)
             supplied_email = rec.get("SuppliedEmail")
@@ -305,17 +308,29 @@ class SalesforceSyncEngine:
                 else now
             )
 
+            # Deduplication: check if feedback already exists for this complaint or sf_id
+            existing = db.feedback.find_one({
+                "$or": [
+                    {"_id": sf_id},
+                    {"id": sf_id},
+                    {"complaint_id": case_id},
+                    {"salesforce_feedback_id": sf_id}
+                ]
+            })
+
+            target_id = existing["_id"] if existing else sf_id
+
             doc = {
-                "_id": sf_id,
-                "id": sf_id,
+                "_id": target_id,
+                "id": str(target_id),
                 "complaint_id": case_id,
-                "user_id": rec.get("Requester_Id__c") or "usr-student-1",
+                "user_id": rec.get("Requester_Id__c") or (existing.get("user_id") if existing else "usr-student-1"),
                 "rating": int(rec.get("Rating__c") or 5),
                 "comments": rec.get("Comments__c") or "",
                 "salesforce_feedback_id": sf_id,
                 "created_at": created_at
             }
-            db.feedback.replace_one({"_id": sf_id}, doc, upsert=True)
+            db.feedback.replace_one({"_id": target_id}, doc, upsert=True)
             count += 1
 
         logger.info(f"Synced {count} feedback reviews directly from Salesforce Cloud.")
@@ -413,7 +428,7 @@ class SalesforceSyncEngine:
                 "email": "r.miller@smartcampus.edu",
                 "full_name": "Prof. Robert Miller",
                 "role": Role.FACULTY.value,
-                "staff_department_id": None
+                "staff_department_id": elec_id
             },
             {
                 "id": "usr-student-1",

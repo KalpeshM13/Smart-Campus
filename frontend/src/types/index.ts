@@ -28,6 +28,7 @@ export interface User {
 
 export interface Department {
   id: string;
+  code?: string;
   name: string;
   description: string;
   contactEmail: string;

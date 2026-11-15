@@ -78,9 +78,9 @@ class ComplaintResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None
+    feedback: Optional[FeedbackResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class ComplaintDetailResponse(ComplaintResponse):
     history: List[ComplaintHistoryResponse] = []
-    feedback: Optional[FeedbackResponse] = None

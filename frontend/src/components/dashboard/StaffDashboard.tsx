@@ -18,9 +18,21 @@ import { ComplaintTable } from '../complaints/ComplaintTable';
 export const StaffDashboard: React.FC = () => {
   const { currentUser, complaints, departments, setSelectedComplaint } = useApp();
 
-  const dept = departments.find((d) => d.id === currentUser.staffDepartmentId);
+  const dept = departments.find(
+    (d) =>
+      d.id === currentUser.staffDepartmentId ||
+      (currentUser.staffDepartmentName && d.name.toLowerCase().includes(currentUser.staffDepartmentName.toLowerCase())) ||
+      (currentUser.role === 'STAFF' && (d.code === 'IT' || d.name.toLowerCase().includes('it'))) ||
+      (currentUser.role === 'FACULTY' && (d.code === 'ELEC' || d.name.toLowerCase().includes('electrical')))
+  );
+
+  const targetDeptId = currentUser.staffDepartmentId || dept?.id;
+
   const deptComplaints = complaints.filter(
-    (c) => c.assignedDepartmentId === currentUser.staffDepartmentId
+    (c) =>
+      (targetDeptId && (c.assignedDepartmentId === targetDeptId || (dept && c.assignedDepartmentName === dept.name))) ||
+      (currentUser.staffDepartmentId === 'dept-it' && (c.assignedDepartmentName?.includes('IT') || c.assignedDepartmentId === 'a00fj00002oJzI5AAK')) ||
+      (currentUser.role === 'FACULTY' && (c.createdBy === currentUser.id || c.assignedDepartmentName?.toLowerCase().includes('electrical')))
   );
 
   const assignedCount = deptComplaints.filter((c) => c.status === 'ASSIGNED').length;

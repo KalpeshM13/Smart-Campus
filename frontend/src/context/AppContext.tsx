@@ -104,6 +104,40 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Defensive deduplication helper ensuring no duplicate tickets appear in the UI
+function deduplicateComplaints(list: Complaint[]): Complaint[] {
+  const seenKeys = new Set<string>();
+  const seenSemantic = new Set<string>();
+  const result: Complaint[] = [];
+
+  for (const c of list) {
+    // 1. Direct key match: Salesforce Case ID or internal ID
+    const sfKey = c.salesforceCaseId ? `sf-${c.salesforceCaseId}` : null;
+    const sfNumKey = c.salesforceCaseNumber ? `num-${c.salesforceCaseNumber}` : null;
+    const cmpNumKey = c.complaintNumber ? `cmp-${c.complaintNumber}` : null;
+
+    if (sfKey && seenKeys.has(sfKey)) continue;
+    if (sfNumKey && seenKeys.has(sfNumKey)) continue;
+
+    // 2. Semantic matching: same title + same requester
+    const titleNorm = (c.title || '').trim().toLowerCase();
+    const requesterNorm = (c.createdByName || c.createdBy || '').trim().toLowerCase();
+    const semanticKey = `${titleNorm}|${requesterNorm}`;
+
+    if (titleNorm.length > 3 && seenSemantic.has(semanticKey)) {
+      continue;
+    }
+
+    if (sfKey) seenKeys.add(sfKey);
+    if (sfNumKey) seenKeys.add(sfNumKey);
+    if (cmpNumKey) seenKeys.add(cmpNumKey);
+    if (titleNorm.length > 3) seenSemantic.add(semanticKey);
+
+    result.push(c);
+  }
+  return result;
+}
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = localStorage.getItem('scms_current_user');
@@ -133,7 +167,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [complaints, setComplaints] = useState<Complaint[]>(() => {
     const saved = localStorage.getItem('scms_complaints');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed: Complaint[] = JSON.parse(saved);
+      return deduplicateComplaints(parsed);
+    } catch {
+      return [];
+    }
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
@@ -183,7 +223,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Live Backend Data Synchronizer
   const refreshBackendData = useCallback(async () => {
     try {
-      await api.login(currentUser.email, 'CampusSecret2026!');
+      const loginRes = await api.login(currentUser.email, 'CampusSecret2026!');
+      if (loginRes?.user) {
+        setCurrentUser((prev) => ({
+          ...prev,
+          id: loginRes.user.id || prev.id,
+          fullName: loginRes.user.full_name || prev.fullName,
+          role: loginRes.user.role || prev.role,
+          staffDepartmentId: loginRes.user.staff_department_id || prev.staffDepartmentId,
+        }));
+      }
+
       const [depts, cats, cmps] = await Promise.all([
         api.getDepartments(),
         api.getCategories(),
@@ -192,14 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (depts && depts.length > 0) setDepartments(depts);
       if (cats && cats.length > 0) setCategories(cats);
       if (cmps) {
-        // Defensive deduplication by salesforceCaseId or id
-        const seen = new Set<string>();
-        const uniqueCmps = cmps.filter((c) => {
-          const key = c.salesforceCaseId || c.id;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+        const uniqueCmps = deduplicateComplaints(cmps);
         setComplaints(uniqueCmps);
       }
     } catch (err) {
@@ -245,7 +288,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const switchRole = (role: Role) => {
-    const target = USERS.find((u) => u.role === role) || USERS[0];
+    let target = USERS.find((u) => u.role === role) || USERS[0];
+    
+    // Dynamically associate live department ID from fetched departments
+    if (role === 'STAFF') {
+      const itDept = departments.find(
+        (d) => d.code === 'IT' || d.name.toLowerCase().includes('it') || d.name.toLowerCase().includes('information')
+      );
+      if (itDept) {
+        target = {
+          ...target,
+          staffDepartmentId: itDept.id,
+          staffDepartmentName: itDept.name,
+        };
+      }
+    } else if (role === 'FACULTY') {
+      const elecDept = departments.find(
+        (d) => d.code === 'ELEC' || d.name.toLowerCase().includes('electrical')
+      );
+      if (elecDept) {
+        target = {
+          ...target,
+          staffDepartmentId: elecDept.id,
+          staffDepartmentName: elecDept.name,
+        };
+      }
+    }
+
     setCurrentUser(target);
     showToast(`Switched persona to ${target.fullName} (${role})`, 'info');
   };
@@ -275,14 +344,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           attachmentName: data.attachmentName,
         });
 
-        setComplaints((prev) => [
-          created,
-          ...prev.filter(
-            (c) =>
-              c.id !== created.id &&
-              (!created.salesforceCaseId || c.salesforceCaseId !== created.salesforceCaseId)
-          ),
-        ]);
+        setComplaints((prev) => deduplicateComplaints([created, ...prev]));
 
         // Create in-app notification
         const newNotif: NotificationItem = {

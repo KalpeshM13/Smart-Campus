@@ -212,6 +212,7 @@ class ApiClient {
     );
     return raw.map((d) => ({
       id: d.id,
+      code: d.code,
       name: d.name,
       description: d.description || '',
       contactEmail: d.contact_email,

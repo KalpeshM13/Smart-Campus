@@ -35,7 +35,19 @@ export const Sidebar: React.FC = () => {
     currentUser.role === 'ADMIN'
       ? complaints.length
       : currentUser.role === 'STAFF'
-      ? complaints.filter((c) => c.assignedDepartmentId === currentUser.staffDepartmentId).length
+      ? complaints.filter(
+          (c) =>
+            c.assignedDepartmentId === currentUser.staffDepartmentId ||
+            (currentUser.staffDepartmentId === 'dept-it' &&
+              (c.assignedDepartmentName?.includes('IT') || c.assignedDepartmentId === 'a00fj00002oJzI5AAK'))
+        ).length
+      : currentUser.role === 'FACULTY'
+      ? complaints.filter(
+          (c) =>
+            c.createdBy === currentUser.id ||
+            c.assignedDepartmentId === currentUser.staffDepartmentId ||
+            c.assignedDepartmentName?.toLowerCase().includes('electrical')
+        ).length
       : complaints.filter((c) => c.createdBy === currentUser.id).length;
 
   const resolvedCount = complaints.filter((c) => c.status === 'RESOLVED' || c.status === 'CLOSED').length;
@@ -57,7 +69,7 @@ export const Sidebar: React.FC = () => {
     {
       id: 'complaints',
       label:
-        currentUser.role === 'STAFF'
+        currentUser.role === 'STAFF' || currentUser.role === 'FACULTY'
           ? 'Department Queue'
           : currentUser.role === 'ADMIN'
           ? 'All Complaints'

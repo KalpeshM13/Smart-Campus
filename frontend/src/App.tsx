@@ -25,7 +25,7 @@ const MainContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         if (currentUser.role === 'ADMIN') return <AdminDashboard />;
-        if (currentUser.role === 'STAFF') return <StaffDashboard />;
+        if (currentUser.role === 'STAFF' || currentUser.role === 'FACULTY') return <StaffDashboard />;
         return <StudentDashboard />;
 
       case 'complaints':
@@ -34,8 +34,8 @@ const MainContent: React.FC = () => {
             customTitle={
               currentUser.role === 'ADMIN'
                 ? 'All Campus Service Requests'
-                : currentUser.role === 'STAFF'
-                ? `${currentUser.staffDepartmentName} Work Queue`
+                : currentUser.role === 'STAFF' || currentUser.role === 'FACULTY'
+                ? `${currentUser.staffDepartmentName || 'Department'} Work Queue`
                 : 'My Submitted Requests'
             }
             departmentFilterOnly={

@@ -87,12 +87,14 @@ def submit_feedback(
         try:
             from app.integrations.salesforce import get_salesforce_service
             sf_service = get_salesforce_service()
-            sf_service.submit_feedback(
+            sf_res = sf_service.submit_feedback(
                 case_id=complaint.salesforce_case_id,
                 rating=payload.rating,
                 comments=payload.comments,
                 requester_id=current_user.id
             )
+            if sf_res and sf_res.get("id"):
+                db.feedback.update_one({"_id": fb.id}, {"$set": {"salesforce_feedback_id": sf_res.get("id")}})
         except Exception as e:
             import logging
             logging.getLogger("smart_campus.salesforce").warning(f"Salesforce Feedback synchronization notice: {e}")

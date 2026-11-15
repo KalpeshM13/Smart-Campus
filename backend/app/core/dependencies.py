@@ -51,7 +51,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 def require_staff_or_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role not in [Role.STAFF, Role.ADMIN]:
+    if current_user.role not in [Role.STAFF, Role.ADMIN, Role.FACULTY]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Department staff or administrator privilege required.")
     return current_user
 
@@ -65,8 +65,18 @@ def verify_complaint_access(complaint: Complaint, user: User) -> None:
     if user.role == Role.ADMIN:
         return
 
-    if user.role in [Role.STUDENT, Role.FACULTY]:
+    if user.role == Role.STUDENT:
         if complaint.created_by != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: You are not authorized to view or modify this complaint."
+            )
+        return
+
+    if user.role == Role.FACULTY:
+        is_creator = complaint.created_by == user.id
+        is_dept = user.staff_department_id and complaint.assigned_department_id == user.staff_department_id
+        if not (is_creator or is_dept):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: You are not authorized to view or modify this complaint."
