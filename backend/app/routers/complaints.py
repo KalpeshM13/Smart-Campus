@@ -303,9 +303,20 @@ def update_complaint_status(
         try:
             from app.integrations.salesforce import get_salesforce_service
             sf_service = get_salesforce_service()
+            sf_status_map = {
+                "NEW": "New",
+                "ASSIGNED": "Assigned",
+                "IN_PROGRESS": "In_Progress",
+                "ON_HOLD": "On_Hold",
+                "RESOLVED": "Resolved",
+                "CLOSED": "Closed",
+                "REJECTED": "Rejected"
+            }
+            raw_val = payload.status.value if hasattr(payload.status, "value") else str(payload.status)
+            sf_status_value = sf_status_map.get(raw_val.upper(), raw_val)
             sf_service.update_status(
                 case_id=complaint.salesforce_case_id,
-                new_status=payload.status.value.replace("_", " ").title() if hasattr(payload.status, "value") else str(payload.status),
+                new_status=sf_status_value,
                 user_id=current_user.id,
                 resolution_notes=payload.resolution_notes,
                 hold_reason=payload.hold_reason
@@ -343,10 +354,29 @@ def assign_complaint_department(
 
     complaint.updated_at = now
 
+    # Synchronize reassignment with Salesforce Service Cloud
+    if complaint.salesforce_case_id:
+        try:
+            from app.integrations.salesforce import get_salesforce_service
+            sf_service = get_salesforce_service()
+            sf_service._ensure_metadata()
+            q_name = target_dept.get("queue_name")
+            q_id = sf_service._queues_cache.get(q_name) if q_name else None
+            sf_update = {"Department__c": target_dept_id}
+            if q_id:
+                sf_update["OwnerId"] = q_id
+            if complaint.status == ComplaintStatus.ASSIGNED:
+                sf_update["Status"] = "Assigned"
+            sf_service.client.update_record("Case", complaint.salesforce_case_id, sf_update)
+            complaint.queue_name = q_name
+        except Exception as e:
+            import logging
+            logging.getLogger("smart_campus.salesforce").warning(f"Salesforce reassignment sync notice: {e}")
+
     history = ComplaintHistory(
         complaint_id=complaint.id,
         changed_by=current_user.id,
-        previous_status=complaint.status.value,
+        previous_status=doc.get("status", "NEW"),
         new_status=complaint.status.value,
         remarks=f"Reassigned to {target_dept.get('name')} by Administrator {current_user.full_name}.",
         created_at=now

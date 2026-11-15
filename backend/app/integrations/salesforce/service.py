@@ -159,6 +159,7 @@ class SalesforceService:
 
         if routing["queue_id"]:
             fields["OwnerId"] = routing["queue_id"]
+            fields["Status"] = "Assigned"
 
         if routing["needs_admin_triage"]:
             fields["Needs_Admin_Triage__c"] = True

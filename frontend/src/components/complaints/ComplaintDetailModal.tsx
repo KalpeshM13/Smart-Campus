@@ -9,6 +9,7 @@ import {
   Star,
   Paperclip,
   X,
+  XCircle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ComplaintStatus } from '../../types';
@@ -82,9 +83,15 @@ export const ComplaintDetailModal: React.FC = () => {
     }
   };
 
-  const handleReassign = () => {
+  const handleReject = async () => {
+    if (window.confirm('Are you sure you want to reject this complaint as invalid or duplicate?')) {
+      await updateComplaintStatus(c.id, 'REJECTED', 'Complaint rejected by Administrator as invalid or duplicate.');
+    }
+  };
+
+  const handleReassign = async () => {
     if (!reassignDeptId) return;
-    assignComplaint(c.id, reassignDeptId);
+    await assignComplaint(c.id, reassignDeptId);
     setReassignDeptId('');
   };
 
@@ -212,14 +219,14 @@ export const ComplaintDetailModal: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Start Work */}
-                {c.status === 'ASSIGNED' && (
+                {/* Start Work / Accept Ticket */}
+                {(c.status === 'NEW' || c.status === 'ASSIGNED') && (
                   <button
                     onClick={handleStartWork}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition"
                   >
                     <PlayCircle className="w-4 h-4" />
-                    Start Processing Ticket
+                    {c.status === 'NEW' ? 'Accept & Start Processing' : 'Start Processing Ticket'}
                   </button>
                 )}
 
@@ -235,7 +242,7 @@ export const ComplaintDetailModal: React.FC = () => {
                 )}
 
                 {/* Place on hold */}
-                {c.status === 'IN_PROGRESS' && (
+                {(c.status === 'IN_PROGRESS' || c.status === 'ASSIGNED' || c.status === 'NEW') && (
                   <button
                     onClick={() => setIsHoldBoxOpen(!isHoldBoxOpen)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-purple-800 bg-purple-100 hover:bg-purple-200 border border-purple-200 rounded-lg transition"
@@ -246,13 +253,24 @@ export const ComplaintDetailModal: React.FC = () => {
                 )}
 
                 {/* Mark Resolved */}
-                {(c.status === 'IN_PROGRESS' || c.status === 'ASSIGNED') && (
+                {(c.status === 'IN_PROGRESS' || c.status === 'ASSIGNED' || c.status === 'NEW') && (
                   <button
                     onClick={() => setIsResolveBoxOpen(!isResolveBoxOpen)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition"
                   >
                     <CheckCircle className="w-4 h-4" />
                     Mark Resolved (Mandatory Notes)
+                  </button>
+                )}
+
+                {/* Administrator Reject */}
+                {currentUser.role === 'ADMIN' && (c.status === 'NEW' || c.status === 'ASSIGNED') && (
+                  <button
+                    onClick={handleReject}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition"
+                  >
+                    <XCircle className="w-4 h-4 text-rose-500" />
+                    Reject Ticket
                   </button>
                 )}
 

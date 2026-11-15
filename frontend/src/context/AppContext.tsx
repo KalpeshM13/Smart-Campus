@@ -87,7 +87,7 @@ interface AppContextType {
     departmentId: string,
     staffId?: string,
     staffName?: string
-  ) => void;
+  ) => Promise<boolean>;
 
   submitFeedback: (complaintId: string, rating: number, comments: string) => Promise<void>;
   refreshBackendData: () => Promise<void>;
@@ -473,14 +473,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Assign staff / department override
-  const assignComplaint = (
+  const assignComplaint = async (
     complaintId: string,
     departmentId: string,
     staffId?: string,
     staffName?: string
-  ) => {
+  ): Promise<boolean> => {
     const dept = departments.find((d) => d.id === departmentId);
-    if (!dept) return;
+    if (!dept) return false;
+
+    if (isBackendConnected) {
+      try {
+        await api.login(currentUser.email, 'CampusSecret2026!');
+        const updated = await api.assignComplaint(complaintId, departmentId, staffId);
+        setComplaints((prev) =>
+          prev.map((c) => (c.id === complaintId ? updated : c))
+        );
+        if (selectedComplaint && selectedComplaint.id === complaintId) {
+          setSelectedComplaint(updated);
+        }
+        showToast(`Complaint reassigned to ${updated.assignedDepartmentName || dept.name} in live Salesforce!`, 'success');
+        return true;
+      } catch (err: any) {
+        console.error('Failed to assign complaint via backend:', err);
+        showToast(`Reassign Error: ${err.message}`, 'error');
+        return false;
+      }
+    }
 
     const now = new Date().toISOString();
     setComplaints((prev) =>
@@ -513,6 +532,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
     showToast(`Complaint assigned to ${dept.name}`, 'success');
+    return true;
   };
 
   // FR-09: Feedback submission
