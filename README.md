@@ -167,11 +167,6 @@ The system provides 4 pre-configured persona profiles accessible directly from t
    - The `/api/complaints/{id}` endpoints verify that the requesting user's identity matches either the complaint creator, an assigned technician within that department, or a system administrator. Cross-student or cross-department unauthorized access returns an immediate HTTP 403 Forbidden.
 3. **Privilege Escalation Defense**:
    - The public `/api/auth/register` route strictly disallows self-provisioning of `ADMIN` or `STAFF` roles. Any attempt to pass elevated roles in registration payload is rejected with HTTP 403.
-4. **Zero Horizontal Overflow & Zero Console Warnings**:
-   - The viewport applies `overflow-x: hidden`, `width: 100%`, `max-width: 100vw`, and `box-sizing: border-box`.
-   - Recharts responsive charts utilize `minWidth={0} minHeight={0}` container constraints to eliminate ResizeObserver bounding box console warnings.
-   - The frontend passes `oxlint` with **0 errors and 0 warnings** across all 30 source files.
-   - Clean production build with Vite code splitting generates optimized vendor chunks under 300 kB.
 
 ---
 
