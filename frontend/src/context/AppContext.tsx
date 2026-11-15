@@ -44,6 +44,7 @@ interface AppContextType {
   selectedCampus: string;
   setSelectedCampus: (campus: string) => void;
   isBackendConnected: boolean;
+  salesforceStatus: { mode?: string; orgName?: string };
 
   // Modals & Panels
   isRegisterModalOpen: boolean;
@@ -149,18 +150,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastData | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
+  const [salesforceStatus, setSalesforceStatus] = useState<{ mode?: string; orgName?: string }>({});
 
   // Periodic Backend Health Monitoring
   useEffect(() => {
     let isMounted = true;
     const testHealth = async () => {
       try {
-        const ok = await api.checkHealth();
+        const res = await api.checkHealth();
         if (isMounted) {
-          setIsBackendConnected(ok);
+          setIsBackendConnected(res.ok);
+          if (res.salesforceMode) {
+            setSalesforceStatus({ mode: res.salesforceMode, orgName: res.orgName });
+          }
         }
       } catch {
-        if (isMounted) setIsBackendConnected(false);
+        if (isMounted) {
+          setIsBackendConnected(false);
+          setSalesforceStatus({});
+        }
       }
     };
     testHealth();
@@ -616,6 +624,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedCampus,
         setSelectedCampus,
         isBackendConnected,
+        salesforceStatus,
         isRegisterModalOpen,
         setIsRegisterModalOpen,
         isFeedbackModalOpen,

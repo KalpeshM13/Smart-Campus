@@ -29,6 +29,7 @@ export const Navbar: React.FC = () => {
     setSearchQuery,
     setActiveTab,
     isBackendConnected,
+    salesforceStatus,
   } = useApp();
 
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -141,11 +142,13 @@ export const Navbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {/* MongoDB API Connectivity Indicator */}
+          {/* Live Salesforce Service Cloud & MongoDB API Connectivity Indicator */}
           <div
             title={
               isBackendConnected
-                ? 'Connected to FastAPI & MongoDB Atlas'
+                ? salesforceStatus?.mode === 'live_salesforce'
+                  ? `Connected to Live Salesforce Service Cloud (${salesforceStatus.orgName || 'AISSMS IOIT'}) & MongoDB Atlas`
+                  : 'Connected to FastAPI & MongoDB Atlas'
                 : 'Running in Standalone Offline Demo Mode'
             }
             className="hidden md:flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full bg-slate-50 border border-slate-200 text-slate-600 select-none"
@@ -153,11 +156,19 @@ export const Navbar: React.FC = () => {
             <span
               className={`w-2 h-2 rounded-full ${
                 isBackendConnected
-                  ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
+                  ? salesforceStatus?.mode === 'live_salesforce'
+                    ? 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)]'
+                    : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
                   : 'bg-amber-400'
               }`}
             />
-            <span>{isBackendConnected ? 'API Live' : 'Demo Mode'}</span>
+            <span className={salesforceStatus?.mode === 'live_salesforce' ? 'font-semibold text-sky-700' : ''}>
+              {isBackendConnected
+                ? salesforceStatus?.mode === 'live_salesforce'
+                  ? 'Salesforce Live ☁️'
+                  : 'API Live'
+                : 'Demo Mode'}
+            </span>
           </div>
 
           {/* Quick Submit Request CTA */}

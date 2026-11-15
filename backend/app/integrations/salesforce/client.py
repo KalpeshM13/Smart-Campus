@@ -97,7 +97,6 @@ class SalesforceRestClient(SalesforceClientInterface):
             return self._access_token
 
         logger.info("Authenticating with Salesforce OAuth 2.0 token endpoint...")
-        token_url = f"{self.config.LOGIN_URL.rstrip('/')}/services/oauth2/token"
         client = self._get_http_client()
 
         payload: Dict[str, str] = {
@@ -106,13 +105,19 @@ class SalesforceRestClient(SalesforceClientInterface):
         }
 
         if self.config.AUTH_TYPE == "client_credentials":
+            # Salesforce Client Credentials Flow requires the My Domain URL or site URL
+            base_url = self.config.INSTANCE_URL.rstrip('/') if self.config.INSTANCE_URL else self.config.LOGIN_URL.rstrip('/')
+            token_url = f"{base_url}/services/oauth2/token"
             payload["grant_type"] = "client_credentials"
         elif self.config.AUTH_TYPE == "password":
+            token_url = f"{self.config.LOGIN_URL.rstrip('/')}/services/oauth2/token"
             payload["grant_type"] = "password"
             payload["username"] = self.config.USERNAME
             # Append security token to password if present
             payload["password"] = f"{self.config.PASSWORD}{self.config.SECURITY_TOKEN}"
         else:
+            base_url = self.config.INSTANCE_URL.rstrip('/') if self.config.INSTANCE_URL else self.config.LOGIN_URL.rstrip('/')
+            token_url = f"{base_url}/services/oauth2/token"
             payload["grant_type"] = "client_credentials"
 
         try:

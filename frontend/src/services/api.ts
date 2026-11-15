@@ -80,12 +80,18 @@ class ApiClient {
   }
 
   // Health check
-  async checkHealth(): Promise<boolean> {
+  async checkHealth(): Promise<{ ok: boolean; salesforceMode?: string; orgName?: string }> {
     try {
       const res = await fetch(HEALTH_URL, { method: 'GET' });
-      return res.ok;
+      if (!res.ok) return { ok: false };
+      const data = await res.json();
+      return {
+        ok: true,
+        salesforceMode: data?.salesforce?.mode,
+        orgName: data?.salesforce?.org_name,
+      };
     } catch {
-      return false;
+      return { ok: false };
     }
   }
 

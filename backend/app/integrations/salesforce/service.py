@@ -26,11 +26,102 @@ class SalesforceService:
             logger.info("Initializing Salesforce Service in LIVE REST API mode.")
             self.client = SalesforceRestClient(sf_config)
 
+        # Internal metadata cache
+        self._queues_cache: Dict[str, str] = {}  # DeveloperName -> Queue Id
+        self._departments_cache: Dict[str, Dict[str, Any]] = {}  # Id or Code -> Dept dict
+        self._categories_cache: Dict[str, Dict[str, Any]] = {}  # Id, Code, or Name -> Cat dict
+        self._metadata_loaded = False
+
     def is_mock(self) -> bool:
         return self.client.is_mock()
 
     def get_health(self) -> Dict[str, Any]:
         return self.client.health_check()
+
+    def _ensure_metadata(self) -> None:
+        """Loads and caches Queues, Departments, and Categories for fast SOQL routing."""
+        if self._metadata_loaded:
+            return
+
+        try:
+            # 1. Queues
+            queue_records = self.client.query("SELECT Id, Name, DeveloperName FROM Group WHERE Type = 'Queue'")
+            for q in queue_records:
+                dev_name = q.get("DeveloperName")
+                if dev_name:
+                    self._queues_cache[dev_name] = q.get("Id")
+                    self._queues_cache[dev_name.lower()] = q.get("Id")
+
+            # 2. Departments
+            dept_records = self.client.query("SELECT Id, Name, Code__c, Queue_Name__c, Is_Active__c FROM Department__c")
+            for d in dept_records:
+                sf_id = d.get("Id")
+                code = d.get("Code__c")
+                if sf_id:
+                    self._departments_cache[sf_id] = d
+                if code:
+                    self._departments_cache[code.upper()] = d
+
+            # 3. Categories
+            cat_records = self.client.query("SELECT Id, Name, Code__c, Default_Department__c, Is_Active__c FROM Complaint_Category__c")
+            for c in cat_records:
+                sf_id = c.get("Id")
+                code = c.get("Code__c")
+                name = c.get("Name")
+                if sf_id:
+                    self._categories_cache[sf_id] = c
+                if code:
+                    self._categories_cache[code.upper()] = c
+                if name:
+                    self._categories_cache[name.lower()] = c
+
+            self._metadata_loaded = True
+            logger.info(f"Loaded Salesforce routing metadata: {len(self._queues_cache)} queues, {len(dept_records)} departments, {len(cat_records)} categories.")
+        except Exception as exc:
+            logger.warning(f"Could not load Salesforce routing metadata: {exc}. Routing will fallback safely.")
+
+    def _resolve_routing(self, category_identifier: str) -> Dict[str, Any]:
+        """Resolves category ID, code, or name to Salesforce Category, Department, and Queue ID."""
+        self._ensure_metadata()
+        
+        # Normalize category lookup key
+        key = str(category_identifier).strip()
+        code_key = key.replace("cat-", "").upper()
+        
+        cat = (
+            self._categories_cache.get(key)
+            or self._categories_cache.get(code_key)
+            or self._categories_cache.get(key.lower())
+        )
+
+        dept_id = None
+        queue_id = None
+        queue_name = None
+        cat_sf_id = None
+        needs_admin_triage = False
+
+        if cat and cat.get("Is_Active__c", True):
+            cat_sf_id = cat.get("Id")
+            dept_id = cat.get("Default_Department__c")
+            dept = self._departments_cache.get(dept_id)
+            if dept and dept.get("Is_Active__c", True):
+                q_name = dept.get("Queue_Name__c")
+                queue_name = q_name
+                queue_id = self._queues_cache.get(q_name) or self._queues_cache.get(q_name.lower()) if q_name else None
+        
+        # If unmapped or inactive category, fallback to Admin Review Queue (PRD Section 6 FR-05)
+        if not queue_id:
+            needs_admin_triage = True
+            queue_name = sf_config.ADMIN_REVIEW_QUEUE
+            queue_id = self._queues_cache.get(queue_name) or self._queues_cache.get("Admin_Review_Queue")
+
+        return {
+            "category_id": cat_sf_id or category_identifier,
+            "department_id": dept_id,
+            "queue_id": queue_id,
+            "queue_name": queue_name,
+            "needs_admin_triage": needs_admin_triage
+        }
 
     def create_case(
         self,
@@ -48,21 +139,54 @@ class SalesforceService:
         """
         Creates a new Case in Salesforce with automatic category routing to department queues.
         """
+        routing = self._resolve_routing(category_id)
+
         fields: Dict[str, Any] = {
             "Subject": subject,
             "Description": description,
-            "Complaint_Category__c": category_id,
             "Priority": priority,
-            "Campus_Location__c": location,
-            "Building__c": building,
-            "Room__c": room,
-            "ContactId": requester_id,
-            "Requester_Name__c": requester_name,
-            "Requester_Email__c": requester_email,
+            "Origin": sf_config.DEFAULT_CASE_ORIGIN,
         }
+
+        # Apply mapped routing
+        if routing["category_id"] and str(routing["category_id"]).startswith("a0"):
+            fields["Complaint_Category__c"] = routing["category_id"]
+        elif self.is_mock():
+            fields["Complaint_Category__c"] = category_id
+
+        if routing["department_id"]:
+            fields["Department__c"] = routing["department_id"]
+
+        if routing["queue_id"]:
+            fields["OwnerId"] = routing["queue_id"]
+
+        if routing["needs_admin_triage"]:
+            fields["Needs_Admin_Triage__c"] = True
+
+        # Location details
+        if location:
+            fields["Campus_Location__c"] = location
+        if building:
+            fields["Building__c"] = building
+        if room:
+            fields["Room__c"] = room
+
+        # Contact / Web Requester details
+        if requester_name:
+            fields["SuppliedName"] = requester_name
+        if requester_email:
+            fields["SuppliedEmail"] = requester_email
+        if requester_id:
+            if str(requester_id).startswith("003") or self.is_mock():
+                fields["ContactId"] = requester_id
 
         record_id = self.client.create_record("Case", fields)
         case_doc = self.client.get_record("Case", record_id)
+        
+        # Ensure queue_name is attached to returned case doc for app usage
+        if "Queue_Name__c" not in case_doc and routing.get("queue_name"):
+            case_doc["Queue_Name__c"] = routing["queue_name"]
+
         logger.info(f"Created Salesforce Case {case_doc.get('CaseNumber')} (Id: {record_id}, Queue: {case_doc.get('Queue_Name__c')})")
         return case_doc
 
@@ -75,13 +199,33 @@ class SalesforceService:
         records = self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, Description FROM Case WHERE CaseNumber = '{case_number}' LIMIT 1")
         return records[0] if records else None
 
-    def get_student_cases(self, student_id: str) -> List[Dict[str, Any]]:
+    def get_student_cases(self, student_id: str, email: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetch only Cases created by the authenticated student (PRD T12 isolation)."""
-        return self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, Department__c FROM Case WHERE ContactId = '{student_id}'")
+        where_clause = f"ContactId = '{student_id}'"
+        if email:
+            where_clause = f"(ContactId = '{student_id}' OR SuppliedEmail = '{email}')"
+        return self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, Department__c FROM Case WHERE {where_clause}")
 
     def get_department_cases(self, department_id: str) -> List[Dict[str, Any]]:
         """Fetch only Cases routed to the staff member's department queue (PRD T13 isolation)."""
-        return self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ContactId FROM Case WHERE Department__c = '{department_id}'")
+        if self.is_mock():
+            return self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ContactId FROM Case WHERE Department__c = '{department_id}'")
+
+        self._ensure_metadata()
+        # Resolve department ID if passed as code or mongo id
+        code_key = department_id.replace("dept-", "").upper()
+        dept = self._departments_cache.get(department_id) or self._departments_cache.get(code_key)
+        sf_dept_id = dept.get("Id") if dept else department_id
+        
+        q_name = dept.get("Queue_Name__c") if dept else None
+        q_id = self._queues_cache.get(q_name) if q_name else None
+
+        if q_id:
+            where_clause = f"(Department__c = '{sf_dept_id}' OR OwnerId = '{q_id}')"
+        else:
+            where_clause = f"Department__c = '{sf_dept_id}'"
+
+        return self.client.query(f"SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ContactId FROM Case WHERE {where_clause}")
 
     def get_all_cases(self) -> List[Dict[str, Any]]:
         """Fetch all Cases across all departments (Administrator only)."""
@@ -100,7 +244,6 @@ class SalesforceService:
         """
         update_fields: Dict[str, Any] = {
             "Status": new_status,
-            "LastModifiedById": user_id
         }
         if resolution_notes:
             update_fields["Resolution_Notes__c"] = resolution_notes
