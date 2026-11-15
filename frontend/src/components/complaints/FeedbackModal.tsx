@@ -17,15 +17,18 @@ export const FeedbackModal: React.FC = () => {
 
   if (!isFeedbackModalOpen || !feedbackTargetComplaint) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      submitFeedback(feedbackTargetComplaint.id, rating, comments);
-      setIsSubmitting(false);
+    try {
+      await submitFeedback(feedbackTargetComplaint.id, rating, comments);
       setIsFeedbackModalOpen(false);
       setComments('');
-    }, 300);
+    } catch (err) {
+      console.error('Feedback submission error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

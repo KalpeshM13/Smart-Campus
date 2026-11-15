@@ -128,6 +128,7 @@ def root():
     }
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     """Service health check endpoint verifying MongoDB and Salesforce Service Cloud connectivity."""
     try:

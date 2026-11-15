@@ -334,6 +334,9 @@ class ApiClient {
       resolvedAt: c.resolved_at,
       slaTargetHours: c.sla_target_hours || 24,
       isOverdue: c.is_overdue || false,
+      salesforceCaseId: c.salesforce_case_id,
+      salesforceCaseNumber: c.salesforce_case_number,
+      queueName: c.queue_name,
       feedback: c.feedback
         ? {
             id: c.feedback.id,

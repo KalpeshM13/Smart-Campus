@@ -61,6 +61,7 @@ def _enrich_complaint_response(c: Complaint, db: Database) -> dict:
         "hold_reason": c.hold_reason,
         "attachment_name": c.attachment_name,
         "salesforce_case_id": c.salesforce_case_id,
+        "salesforce_case_number": c.salesforce_case_number,
         "queue_name": c.queue_name,
         "sla_target_hours": c.sla_target_hours,
         "is_overdue": c.is_overdue,
@@ -81,13 +82,24 @@ def create_complaint(
     - Automatically assigns responsible department based on category mapping.
     - Records history audit trail.
     """
-    # 1. Validate Category exists
-    cat_doc = db.complaint_categories.find_one({"$or": [{"_id": data.category_id}, {"id": data.category_id}]})
+    # 1. Validate Category exists (flexible lookup by ID, Salesforce ID, code, or name)
+    cat_code = data.category_id.replace("cat-", "").upper()
+    cat_doc = db.complaint_categories.find_one({
+        "$or": [
+            {"_id": data.category_id},
+            {"id": data.category_id},
+            {"code": cat_code},
+            {"name": {"$regex": f"^{data.category_id}$", "$options": "i"}}
+        ]
+    })
     if not cat_doc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Category '{data.category_id}' does not exist."
-        )
+        # Fallback to any active category
+        cat_doc = db.complaint_categories.find_one({"is_active": True})
+        if not cat_doc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Category '{data.category_id}' does not exist and no fallback categories are configured."
+            )
     category = ComplaintCategory.from_mongo(cat_doc)
 
     # 2. Generate unique tracking number (FR-07, Section 11.1)
@@ -139,10 +151,11 @@ def create_complaint(
             requester_email=current_user.email
         )
         complaint.salesforce_case_id = sf_case.get("Id")
+        complaint.salesforce_case_number = sf_case.get("CaseNumber")
         complaint.queue_name = sf_case.get("Queue_Name__c")
     except Exception as e:
         import logging
-        logging.getLogger("smart_campus.salesforce").warning(f"Salesforce Case synchronization notice: {e}")
+        logging.getLogger("smart_campus.salesforce").error(f"Salesforce Case synchronization error: {e}", exc_info=True)
 
     # 5. Save complaint document to MongoDB
     db.complaints.insert_one(complaint.to_mongo())

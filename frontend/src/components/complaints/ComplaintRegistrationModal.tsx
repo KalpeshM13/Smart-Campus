@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   Building2,
@@ -34,6 +34,14 @@ export const ComplaintRegistrationModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      if (!categoryId || !categories.some((c) => c.id === categoryId)) {
+        setCategoryId(categories[0].id);
+      }
+    }
+  }, [categories, categoryId]);
+
   if (!isRegisterModalOpen) return null;
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -41,7 +49,7 @@ export const ComplaintRegistrationModal: React.FC = () => {
     (d) => d.id === selectedCategory?.departmentId && d.isActive
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: { [key: string]: string } = {};
@@ -64,8 +72,8 @@ export const ComplaintRegistrationModal: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      createComplaint({
+    try {
+      await createComplaint({
         title,
         description,
         categoryId,
@@ -76,14 +84,17 @@ export const ComplaintRegistrationModal: React.FC = () => {
         attachmentName,
       });
 
-      setIsSubmitting(false);
       setIsRegisterModalOpen(false);
       // Reset form
       setTitle('');
       setDescription('');
       setAttachmentName(undefined);
       setErrors({});
-    }, 400);
+    } catch (err) {
+      console.error('Complaint creation error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSimulateUpload = () => {

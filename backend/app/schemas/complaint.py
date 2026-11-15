@@ -71,6 +71,7 @@ class ComplaintResponse(BaseModel):
     hold_reason: Optional[str] = None
     attachment_name: Optional[str] = None
     salesforce_case_id: Optional[str] = None
+    salesforce_case_number: Optional[str] = None
     queue_name: Optional[str] = None
     sla_target_hours: int
     is_overdue: bool

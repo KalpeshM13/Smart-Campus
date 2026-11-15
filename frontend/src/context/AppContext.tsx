@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   INITIAL_CATEGORIES,
   INITIAL_COMPLAINTS,
@@ -73,14 +73,14 @@ interface AppContextType {
     building: string;
     room: string;
     attachmentName?: string;
-  }) => Complaint;
+  }) => Promise<Complaint>;
 
   updateComplaintStatus: (
     complaintId: string,
     newStatus: ComplaintStatus,
     notes?: string,
     holdReason?: string
-  ) => boolean;
+  ) => Promise<boolean>;
 
   assignComplaint: (
     complaintId: string,
@@ -89,7 +89,8 @@ interface AppContextType {
     staffName?: string
   ) => void;
 
-  submitFeedback: (complaintId: string, rating: number, comments: string) => void;
+  submitFeedback: (complaintId: string, rating: number, comments: string) => Promise<void>;
+  refreshBackendData: () => Promise<void>;
 
   updateCategoryMapping: (categoryId: string, departmentId: string) => void;
   addCategory: (cat: Omit<Category, 'id' | 'departmentName'>) => void;
@@ -179,6 +180,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
+  // Live Backend Data Synchronizer
+  const refreshBackendData = useCallback(async () => {
+    try {
+      await api.login(currentUser.email, 'CampusSecret2026!');
+      const [depts, cats, cmps] = await Promise.all([
+        api.getDepartments(),
+        api.getCategories(),
+        api.getComplaints(),
+      ]);
+      if (depts && depts.length > 0) setDepartments(depts);
+      if (cats && cats.length > 0) setCategories(cats);
+      if (cmps) setComplaints(cmps);
+    } catch (err) {
+      console.warn('Backend sync poll notice:', err);
+    }
+  }, [currentUser.email]);
+
+  // Load live data on connection or persona switch
+  useEffect(() => {
+    if (isBackendConnected) {
+      refreshBackendData();
+      const interval = setInterval(refreshBackendData, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [isBackendConnected, refreshBackendData]);
+
   // Sync to local storage
   useEffect(() => {
     localStorage.setItem('scms_complaints', JSON.stringify(complaints));
@@ -214,7 +241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // FR-02 & FR-05: Complaint Registration & Auto-assignment
-  const createComplaint = (data: {
+  const createComplaint = async (data: {
     title: string;
     description: string;
     categoryId: string;
@@ -223,7 +250,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     building: string;
     room: string;
     attachmentName?: string;
-  }): Complaint => {
+  }): Promise<Complaint> => {
+    if (isBackendConnected) {
+      try {
+        await api.login(currentUser.email, 'CampusSecret2026!');
+        const created = await api.createComplaint({
+          title: data.title,
+          description: data.description,
+          categoryId: data.categoryId,
+          priority: data.priority,
+          campus: data.campus,
+          building: data.building,
+          room: data.room,
+          attachmentName: data.attachmentName,
+        });
+
+        setComplaints((prev) => [created, ...prev]);
+
+        // Create in-app notification
+        const newNotif: NotificationItem = {
+          id: `notif-${Date.now()}`,
+          userId: currentUser.id,
+          title: `Service Request Logged: ${created.complaintNumber}`,
+          message: created.assignedDepartmentName
+            ? `Routed directly to ${created.assignedDepartmentName} (${created.queueName || 'Queue'}).`
+            : `Awaiting administrator triage. Tracking ID ${created.complaintNumber}.`,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          complaintId: created.id,
+          type: 'ASSIGNMENT',
+        };
+        setNotifications((prev) => [newNotif, ...prev]);
+
+        showToast(
+          `Case ${created.complaintNumber} created and routed in live Salesforce!`,
+          'success'
+        );
+        return created;
+      } catch (err: any) {
+        console.error('Error creating complaint via backend/Salesforce:', err);
+        showToast(`Salesforce Sync Error: ${err.message}`, 'error');
+        throw err;
+      }
+    }
+
+    // Fallback offline creation
     const cat = categories.find((c) => c.id === data.categoryId);
     const categoryName = cat ? cat.name : 'General';
     const dept = departments.find((d) => d.id === cat?.departmentId && d.isActive);
@@ -233,9 +304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const now = new Date().toISOString();
 
     const initialStatus: ComplaintStatus = dept ? 'ASSIGNED' : 'NEW';
-
-    const slaHours =
-      data.priority === 'HIGH' ? 24 : data.priority === 'MEDIUM' ? 72 : 120;
+    const slaHours = data.priority === 'HIGH' ? 24 : data.priority === 'MEDIUM' ? 72 : 120;
 
     const newComplaint: Complaint = {
       id: `cmp-${Date.now()}`,
@@ -273,62 +342,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           remarks: 'Complaint registered via web portal.',
           createdAt: now,
         },
-        ...(dept
-          ? [
-              {
-                id: `hist-${Date.now()}-2`,
-                complaintId: `cmp-${Date.now()}`,
-                changedByName: 'System Auto-Router',
-                changedByRole: 'ADMIN' as Role,
-                previousStatus: 'NEW' as ComplaintStatus,
-                newStatus: 'ASSIGNED' as ComplaintStatus,
-                remarks: `Category "${categoryName}" mapped to ${dept.name}. Auto-routed with ${slaHours}h SLA.`,
-                createdAt: now,
-              },
-            ]
-          : [
-              {
-                id: `hist-${Date.now()}-2`,
-                complaintId: `cmp-${Date.now()}`,
-                changedByName: 'System Auto-Router',
-                changedByRole: 'ADMIN' as Role,
-                previousStatus: 'NEW' as ComplaintStatus,
-                newStatus: 'NEW' as ComplaintStatus,
-                remarks: `No active department mapping found for category "${categoryName}". Flagged for Administrator triage.`,
-                createdAt: now,
-              },
-            ]),
       ],
     };
 
     setComplaints((prev) => [newComplaint, ...prev]);
-
-    // Create Notification
-    const newNotif: NotificationItem = {
-      id: `notif-${Date.now()}`,
-      userId: currentUser.id,
-      title: `Service Request Logged: ${complaintNumber}`,
-      message: dept
-        ? `Routed directly to ${dept.name}. Assigned tracking ID ${complaintNumber}.`
-        : `Awaiting administrator triage. Tracking ID ${complaintNumber}.`,
-      isRead: false,
-      createdAt: now,
-      complaintId: newComplaint.id,
-      type: 'ASSIGNMENT',
-    };
-    setNotifications((prev) => [newNotif, ...prev]);
-
-    showToast(`Request ${complaintNumber} registered successfully!`, 'success');
+    showToast(`Request ${complaintNumber} registered locally (offline mode)!`, 'info');
     return newComplaint;
   };
 
   // FR-06: Status management & resolution enforcement
-  const updateComplaintStatus = (
+  const updateComplaintStatus = async (
     complaintId: string,
     newStatus: ComplaintStatus,
     notes?: string,
     holdReason?: string
-  ): boolean => {
+  ): Promise<boolean> => {
     const target = complaints.find((c) => c.id === complaintId);
     if (!target) return false;
 
@@ -341,6 +369,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (newStatus === 'ON_HOLD' && (!holdReason || holdReason.trim().length < 5)) {
       showToast('Validation Error: A specific reason is required before putting a request on hold.', 'error');
       return false;
+    }
+
+    if (isBackendConnected) {
+      try {
+        await api.login(currentUser.email, 'CampusSecret2026!');
+        const updated = await api.updateComplaintStatus(
+          complaintId,
+          newStatus,
+          notes,
+          holdReason
+        );
+        setComplaints((prev) =>
+          prev.map((c) => (c.id === complaintId ? updated : c))
+        );
+        if (selectedComplaint && selectedComplaint.id === complaintId) {
+          setSelectedComplaint(updated);
+        }
+        showToast(`Case status transitioned to ${newStatus} in Salesforce!`, 'success');
+        return true;
+      } catch (err: any) {
+        console.error('Failed to update status in Salesforce:', err);
+        showToast(`Salesforce update notice: ${err.message}`, 'error');
+        return false;
+      }
     }
 
     const now = new Date().toISOString();
@@ -447,7 +499,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // FR-09: Feedback submission
-  const submitFeedback = (complaintId: string, rating: number, comments: string) => {
+  const submitFeedback = async (complaintId: string, rating: number, comments: string): Promise<void> => {
+    if (isBackendConnected) {
+      try {
+        await api.login(currentUser.email, 'CampusSecret2026!');
+        await api.submitFeedback(complaintId, rating, comments);
+        await refreshBackendData();
+        showToast('CSAT feedback submitted to Salesforce and ticket closed!', 'success');
+        return;
+      } catch (err: any) {
+        console.error('Failed to submit feedback to Salesforce:', err);
+        showToast(`Salesforce feedback notice: ${err.message}`, 'error');
+      }
+    }
+
     const now = new Date().toISOString();
     const fb: Feedback = {
       id: `fb-${Date.now()}`,
@@ -643,6 +708,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateComplaintStatus,
         assignComplaint,
         submitFeedback,
+        refreshBackendData,
         updateCategoryMapping,
         addCategory,
         toggleCategoryActive,

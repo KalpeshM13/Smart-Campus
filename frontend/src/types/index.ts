@@ -110,6 +110,9 @@ export interface Complaint {
   resolvedAt?: string;
   slaTargetHours: number;
   isOverdue: boolean;
+  salesforceCaseId?: string;
+  salesforceCaseNumber?: string;
+  queueName?: string;
   feedback?: Feedback;
   history: ComplaintHistory[];
 }

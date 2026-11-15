@@ -50,32 +50,32 @@ export const ComplaintDetailModal: React.FC = () => {
     c.createdBy === currentUser.id &&
     !c.feedback;
 
-  const handleStartWork = () => {
-    updateComplaintStatus(c.id, 'IN_PROGRESS');
+  const handleStartWork = async () => {
+    await updateComplaintStatus(c.id, 'IN_PROGRESS');
   };
 
-  const handleResumeWork = () => {
-    updateComplaintStatus(c.id, 'IN_PROGRESS', 'Resumed work after temporary hold');
+  const handleResumeWork = async () => {
+    await updateComplaintStatus(c.id, 'IN_PROGRESS', 'Resumed work after temporary hold');
   };
 
-  const handleConfirmResolve = () => {
+  const handleConfirmResolve = async () => {
     if (!resolutionNotes.trim() || resolutionNotes.length < 5) {
       alert('Please enter detailed resolution notes (at least 5 characters).');
       return;
     }
-    const success = updateComplaintStatus(c.id, 'RESOLVED', resolutionNotes);
+    const success = await updateComplaintStatus(c.id, 'RESOLVED', resolutionNotes);
     if (success) {
       setIsResolveBoxOpen(false);
       setResolutionNotes('');
     }
   };
 
-  const handleConfirmHold = () => {
+  const handleConfirmHold = async () => {
     if (!holdReason.trim() || holdReason.length < 5) {
       alert('Please provide a specific hold reason.');
       return;
     }
-    const success = updateComplaintStatus(c.id, 'ON_HOLD', undefined, holdReason);
+    const success = await updateComplaintStatus(c.id, 'ON_HOLD', undefined, holdReason);
     if (success) {
       setIsHoldBoxOpen(false);
       setHoldReason('');
@@ -126,10 +126,19 @@ export const ComplaintDetailModal: React.FC = () => {
         {/* Header Bar */}
         <div className="p-5 border-b border-slate-200 flex items-start justify-between bg-slate-50/70">
           <div>
-            <div className="flex items-center gap-2.5 mb-1">
+            <div className="flex items-center gap-2.5 mb-1 flex-wrap">
               <span className="font-mono text-xs font-bold text-blue-700 bg-blue-100/80 px-2.5 py-0.5 rounded border border-blue-200">
                 {c.complaintNumber}
               </span>
+              {c.salesforceCaseId && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200"
+                  title={`Salesforce Service Cloud Case ID: ${c.salesforceCaseId}`}
+                >
+                  <span>☁️ Salesforce Case: #{c.salesforceCaseNumber || c.salesforceCaseId.slice(0, 8)}</span>
+                  {c.queueName && <span className="text-slate-500 font-normal">({c.queueName})</span>}
+                </span>
+              )}
               <PriorityBadge priority={c.priority} />
               <StatusBadge status={c.status} size="lg" />
               {c.isOverdue && (

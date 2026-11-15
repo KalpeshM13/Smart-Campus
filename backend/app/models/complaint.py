@@ -42,6 +42,7 @@ class Complaint(BaseModel):
     
     # Salesforce Service Cloud System of Record Link
     salesforce_case_id: Optional[str] = None
+    salesforce_case_number: Optional[str] = None
     queue_name: Optional[str] = None
     
     sla_target_hours: int = 24
