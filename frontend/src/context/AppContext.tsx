@@ -133,12 +133,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [complaints, setComplaints] = useState<Complaint[]>(() => {
     const saved = localStorage.getItem('scms_complaints');
-    return saved ? JSON.parse(saved) : INITIAL_COMPLAINTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     const saved = localStorage.getItem('scms_notifications');
-    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Dialog & Drawer state

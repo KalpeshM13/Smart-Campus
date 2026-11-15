@@ -42,8 +42,8 @@ async def lifespan(app: FastAPI):
         if not sf_config.MOCK_MODE:
             logger.info("Initializing from live Salesforce Service Cloud and starting continuous sync daemon...")
             sync_engine = get_sync_engine()
-            # If MongoDB has no cases, do initial ingest
-            if db.complaints.count_documents({}) == 0:
+            # If MongoDB has no metadata, do initial ingest
+            if db.departments.count_documents({}) == 0:
                 sync_engine.full_wipe_and_sync(db)
             else:
                 sync_engine.delta_sync(db)

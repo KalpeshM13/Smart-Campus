@@ -149,6 +149,22 @@ class SalesforceSyncEngine:
         count = 0
         now = datetime.now(timezone.utc)
 
+        # Full sync: prune any MongoDB complaints whose Salesforce Case was deleted
+        if since is None:
+            active_sf_ids = [r["Id"] for r in records if r.get("Id")]
+            if active_sf_ids:
+                db.complaints.delete_many({
+                    "$and": [
+                        {"_id": {"$nin": active_sf_ids}},
+                        {"salesforce_case_id": {"$nin": active_sf_ids}}
+                    ]
+                })
+            else:
+                db.complaints.delete_many({})
+                db.complaint_history.delete_many({})
+                db.feedback.delete_many({})
+                db.notifications.delete_many({})
+
         # Preload users for mapping
         users_by_email = {u["email"].lower(): u["_id"] for u in db.users.find({})}
         default_student = db.users.find_one({"role": "STUDENT"})
