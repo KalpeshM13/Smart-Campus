@@ -31,6 +31,18 @@ class Settings(BaseSettings):
     SLA_HOURS_MEDIUM: int = 72
     SLA_HOURS_LOW: int = 120
 
+    # Salesforce Service Cloud Configuration (PRD v2.1)
+    SALESFORCE_ENABLED: bool = True
+    SALESFORCE_MOCK_MODE: bool = True
+    SALESFORCE_AUTH_TYPE: str = "client_credentials"
+    SALESFORCE_LOGIN_URL: str = "https://login.salesforce.com"
+    SALESFORCE_INSTANCE_URL: str = ""
+    SALESFORCE_CLIENT_ID: str = ""
+    SALESFORCE_CLIENT_SECRET: str = ""
+    SALESFORCE_USERNAME: str = ""
+    SALESFORCE_PASSWORD: str = ""
+    SALESFORCE_SECURITY_TOKEN: str = ""
+
     model_config = SettingsConfigDict(
         env_file=(".env", "backend/.env", "../.env"),
         env_file_encoding="utf-8",
