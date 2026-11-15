@@ -6,8 +6,6 @@ import {
   Feedback,
   NotificationItem,
   Priority,
-  Role,
-  User,
 } from '../types';
 
 const RAW_API_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://localhost:8000';
@@ -70,7 +68,7 @@ class ApiClient {
             ? errorData.detail
             : JSON.stringify(errorData.detail);
         }
-      } catch (e) {
+      } catch {
         // Fallback to text or status
       }
       throw new Error(errorMessage);

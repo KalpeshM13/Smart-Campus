@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import get_database, init_mongodb_indexes, _mongo_client
@@ -87,6 +87,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# HTTPS Enforcement & Security Headers Middleware (FR-01 & Security Best Practices)
+@app.middleware("http")
+async def security_and_https_headers_middleware(request: Request, call_next):
+    # Enforce HTTPS redirect if x-forwarded-proto is http on production hosts
+    proto = request.headers.get("x-forwarded-proto", "").lower()
+    host = request.url.hostname or ""
+    if proto == "http" and host not in ("localhost", "127.0.0.1", "testserver") and not host.endswith(".local"):
+        https_url = str(request.url).replace("http://", "https://", 1)
+        return RedirectResponse(url=https_url, status_code=status.HTTP_301_MOVED_PERMANENTLY)
+
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 # Mount uploads static directory for attachments
 if os.path.exists(UPLOAD_DIR):

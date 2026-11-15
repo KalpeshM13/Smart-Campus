@@ -4,11 +4,10 @@ import {
   Building2,
   ChevronDown,
   Layers,
-  LogOut,
+  Menu,
   PlusCircle,
   Search,
   Shield,
-  UserCheck,
   User as UserIcon,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -30,6 +29,8 @@ export const Navbar: React.FC = () => {
     setActiveTab,
     isBackendConnected,
     salesforceStatus,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
   } = useApp();
 
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -62,11 +63,30 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs backdrop-blur-md bg-white/95">
       <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Left: Branding & Campus Selector */}
-        <div className="flex items-center gap-6">
-          <div
-            onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-3 cursor-pointer group"
+        {/* Left: Mobile Menu Toggle & Branding & Campus Selector */}
+        <div className="flex items-center gap-3 sm:gap-6">
+          {/* Mobile Menu Hamburger Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Clickable Logo to Homescreen (FR-01 & Item 12) */}
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab('dashboard');
+              setSearchQuery('');
+              setIsMobileSidebarOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            aria-label="SmartCampus Home"
+            className="flex items-center gap-3 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-sm ring-2 ring-blue-600/20 group-hover:shadow-md transition">
               <Layers className="w-5 h-5" />
@@ -84,11 +104,12 @@ export const Navbar: React.FC = () => {
                 Service Management System
               </p>
             </div>
-          </div>
+          </a>
 
           {/* Campus Selector */}
           <div className="relative hidden md:block">
             <button
+              type="button"
               onClick={() => setIsCampusDropdownOpen(!isCampusDropdownOpen)}
               className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition"
             >
@@ -102,6 +123,7 @@ export const Navbar: React.FC = () => {
                 {campuses.map((c) => (
                   <button
                     key={c}
+                    type="button"
                     onClick={() => {
                       setSelectedCampus(c);
                       setIsCampusDropdownOpen(false);
@@ -131,6 +153,7 @@ export const Navbar: React.FC = () => {
               className="w-full pl-9 pr-16 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition"
             />
             <button
+              type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-500 bg-white border border-slate-200 rounded shadow-2xs hover:bg-slate-50"
               title="Command Palette"
@@ -173,6 +196,7 @@ export const Navbar: React.FC = () => {
 
           {/* Quick Submit Request CTA */}
           <button
+            type="button"
             onClick={() => setIsRegisterModalOpen(true)}
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm hover:shadow transition"
           >
@@ -182,6 +206,7 @@ export const Navbar: React.FC = () => {
 
           {/* Notifications Bell */}
           <button
+            type="button"
             onClick={() => setIsNotificationDrawerOpen(true)}
             className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
             title="Notifications"
@@ -197,6 +222,7 @@ export const Navbar: React.FC = () => {
           {/* Interactive Persona / Role Switcher */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
               className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
             >
@@ -204,7 +230,10 @@ export const Navbar: React.FC = () => {
                 {currentUser.avatar ? (
                   <img
                     src={currentUser.avatar}
-                    alt={currentUser.fullName}
+                    alt={`${currentUser.fullName || 'User'} profile avatar`}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -243,6 +272,7 @@ export const Navbar: React.FC = () => {
                     return (
                       <button
                         key={u.id}
+                        type="button"
                         onClick={() => handleRoleSelect(u.role)}
                         className={`w-full text-left p-2 rounded-lg text-xs flex items-center justify-between transition ${
                           isCurrent
@@ -253,7 +283,10 @@ export const Navbar: React.FC = () => {
                         <div className="flex items-center gap-2.5">
                           <img
                             src={u.avatar}
-                            alt={u.fullName}
+                            alt={`${u.fullName || 'User'} profile avatar`}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
                             className="w-7 h-7 rounded-full object-cover border border-slate-200"
                           />
                           <div>
@@ -295,4 +328,3 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
-

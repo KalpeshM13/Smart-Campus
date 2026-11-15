@@ -1,19 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
-  Building2,
   ChevronLeft,
   ChevronRight,
   Download,
   Eye,
   Filter,
   Search,
-  SlidersHorizontal,
   Star,
   UserCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Complaint, ComplaintStatus, Priority } from '../../types';
 import { PriorityBadge } from '../common/PriorityBadge';
 import { StatusBadge } from '../common/StatusBadge';
 
@@ -47,7 +44,6 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
   );
   const [onlyOverdue, setOnlyOverdue] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [sortField, setSortField] = useState<'createdAt' | 'priority' | 'status'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const pageSize = 8;
 
@@ -133,14 +129,11 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
   // Sorting
   const sortedData = useMemo(() => {
     return [...filteredData].sort((a, b) => {
-      if (sortField === 'createdAt') {
-        const timeA = new Date(a.createdAt).getTime();
-        const timeB = new Date(b.createdAt).getTime();
-        return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
-      }
-      return 0;
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
-  }, [filteredData, sortField, sortOrder]);
+  }, [filteredData, sortOrder]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
   const paginatedData = sortedData.slice(
@@ -178,6 +171,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
+              type="button"
               onClick={() => exportComplaintsCSV(filteredData)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition"
             >
@@ -258,6 +252,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
 
           {/* Overdue checkbox pill */}
           <button
+            type="button"
             onClick={() => {
               setOnlyOverdue(!onlyOverdue);
               setCurrentPage(1);
@@ -280,6 +275,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
             onlyOverdue ||
             localSearch) && (
             <button
+              type="button"
               onClick={resetFilters}
               className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 underline"
             >
@@ -301,7 +297,13 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
               <th className="py-3 px-4">Priority</th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4">SLA Target</th>
-              <th className="py-3 px-4">Reported</th>
+              <th
+                className="py-3 px-4 cursor-pointer hover:text-blue-600 transition select-none"
+                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                title="Click to sort by date"
+              >
+                Reported {sortOrder === 'desc' ? '↓' : '↑'}
+              </th>
               <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
@@ -318,6 +320,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
                       Try clearing filters or search term to view all institutional records.
                     </p>
                     <button
+                      type="button"
                       onClick={resetFilters}
                       className="mt-2 inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"
                     >
@@ -399,6 +402,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
                   <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5">
                       <button
+                        type="button"
                         onClick={() => setSelectedComplaint(c)}
                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                         title="View details & timeline"
@@ -411,6 +415,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
                         !c.feedback &&
                         c.createdBy === currentUser.id && (
                           <button
+                            type="button"
                             onClick={() => {
                               setFeedbackTargetComplaint(c);
                               setIsFeedbackModalOpen(true);
@@ -439,6 +444,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition"
@@ -446,6 +452,7 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition"

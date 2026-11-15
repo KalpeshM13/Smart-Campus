@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
 import {
   AlertCircle,
-  BarChart2,
-  Building2,
   CheckCircle2,
   Clock,
   Download,
@@ -12,7 +10,6 @@ import {
   Shield,
   Timer,
   TrendingUp,
-  Users,
 } from 'lucide-react';
 import {
   Area,
@@ -34,7 +31,7 @@ import { MetricCard } from '../common/MetricCard';
 import { ComplaintTable } from '../complaints/ComplaintTable';
 
 export const AdminDashboard: React.FC = () => {
-  const { complaints, departments, categories, exportComplaintsCSV, setActiveTab } = useApp();
+  const { complaints, departments, exportComplaintsCSV, setActiveTab } = useApp();
 
   // Metric aggregates (FR-11.1)
   const totalCount = complaints.length;
@@ -118,6 +115,7 @@ export const AdminDashboard: React.FC = () => {
 
         <div className="flex items-center gap-2.5">
           <button
+            type="button"
             onClick={() => exportComplaintsCSV()}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition"
           >
@@ -125,6 +123,7 @@ export const AdminDashboard: React.FC = () => {
             <span>Export CSV</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('categories')}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm hover:shadow transition"
           >
@@ -142,6 +141,7 @@ export const AdminDashboard: React.FC = () => {
           trend={{ value: '+8.4%', isPositive: true }}
           icon={Inbox}
           colorTheme="blue"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="New / Awaiting"
@@ -149,6 +149,7 @@ export const AdminDashboard: React.FC = () => {
           subValue="Needs routing"
           icon={Clock}
           colorTheme="indigo"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Assigned"
@@ -156,6 +157,7 @@ export const AdminDashboard: React.FC = () => {
           subValue="In queue"
           icon={Timer}
           colorTheme="slate"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="In Progress"
@@ -163,6 +165,7 @@ export const AdminDashboard: React.FC = () => {
           subValue="Active engineering"
           icon={PlayCircle}
           colorTheme="amber"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Resolved Rate"
@@ -170,6 +173,7 @@ export const AdminDashboard: React.FC = () => {
           trend={{ value: '+4.2%', isPositive: true }}
           icon={CheckCircle2}
           colorTheme="emerald"
+          onClick={() => setActiveTab('feedback')}
         />
         <MetricCard
           label="Overdue SLA"
@@ -177,6 +181,7 @@ export const AdminDashboard: React.FC = () => {
           subValue={overdueCount === 0 ? 'Within target' : 'Escalated'}
           icon={AlertCircle}
           colorTheme={overdueCount > 0 ? 'rose' : 'slate'}
+          onClick={() => setActiveTab('complaints')}
         />
       </div>
 
@@ -198,8 +203,8 @@ export const AdminDashboard: React.FC = () => {
             </span>
           </div>
 
-          <div className="w-full h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-72 min-h-[288px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart
                 data={departmentChartData}
                 margin={{ top: 10, right: 10, left: -10, bottom: 25 }}
@@ -239,8 +244,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full h-56 relative flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-56 min-h-[224px] relative flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={categoryChartData}
@@ -312,8 +317,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full h-56">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full h-56 min-h-[224px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">

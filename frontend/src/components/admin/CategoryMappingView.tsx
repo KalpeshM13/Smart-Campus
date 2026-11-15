@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Check,
   Edit2,
-  FolderGit2,
   PlusCircle,
   Power,
   Search,
@@ -86,6 +85,7 @@ export const CategoryMappingView: React.FC = () => {
         </div>
 
         <button
+          type="button"
           onClick={() => setIsAddModalOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition"
         >
@@ -163,6 +163,7 @@ export const CategoryMappingView: React.FC = () => {
                             ))}
                           </select>
                           <button
+                            type="button"
                             onClick={() => handleSaveEdit(cat.id)}
                             className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
                             title="Save Mapping"
@@ -199,6 +200,7 @@ export const CategoryMappingView: React.FC = () => {
                       <div className="flex items-center justify-end gap-1">
                         {!isEditing && (
                           <button
+                            type="button"
                             onClick={() => handleStartEdit(cat)}
                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                             title="Change mapped department"
@@ -207,6 +209,7 @@ export const CategoryMappingView: React.FC = () => {
                           </button>
                         )}
                         <button
+                          type="button"
                           onClick={() => toggleCategoryActive(cat.id)}
                           className={`p-1.5 rounded-lg transition ${
                             cat.isActive

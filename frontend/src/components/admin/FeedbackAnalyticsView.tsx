@@ -1,8 +1,5 @@
 import React, { useMemo } from 'react';
 import {
-  HeartHandshake,
-  MessageSquare,
-  Sparkles,
   Star,
   ThumbsUp,
   User,

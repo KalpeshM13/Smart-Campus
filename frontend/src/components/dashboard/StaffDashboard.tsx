@@ -2,12 +2,9 @@ import React from 'react';
 import {
   AlertCircle,
   AlertTriangle,
-  Building2,
-  CheckCircle,
   Clock,
   Inbox,
   PlayCircle,
-  Shield,
   Timer,
   Wrench,
 } from 'lucide-react';
@@ -16,7 +13,7 @@ import { MetricCard } from '../common/MetricCard';
 import { ComplaintTable } from '../complaints/ComplaintTable';
 
 export const StaffDashboard: React.FC = () => {
-  const { currentUser, complaints, departments, setSelectedComplaint } = useApp();
+  const { currentUser, complaints, departments, setActiveTab } = useApp();
 
   const dept = departments.find(
     (d) =>
@@ -38,9 +35,6 @@ export const StaffDashboard: React.FC = () => {
   const assignedCount = deptComplaints.filter((c) => c.status === 'ASSIGNED').length;
   const inProgressCount = deptComplaints.filter((c) => c.status === 'IN_PROGRESS').length;
   const onHoldCount = deptComplaints.filter((c) => c.status === 'ON_HOLD').length;
-  const resolvedCount = deptComplaints.filter(
-    (c) => c.status === 'RESOLVED' || c.status === 'CLOSED'
-  ).length;
   const highPriorityCount = deptComplaints.filter((c) => c.priority === 'HIGH').length;
   const overdueCount = deptComplaints.filter((c) => c.isOverdue).length;
 
@@ -87,36 +81,42 @@ export const StaffDashboard: React.FC = () => {
           value={deptComplaints.length}
           icon={Inbox}
           colorTheme="blue"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Awaiting Triage"
           value={assignedCount}
           icon={Clock}
           colorTheme="indigo"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="In Progress"
           value={inProgressCount}
           icon={PlayCircle}
           colorTheme="amber"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="On Hold"
           value={onHoldCount}
           icon={Timer}
           colorTheme="purple"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="High Priority"
           value={highPriorityCount}
           icon={AlertTriangle}
           colorTheme="rose"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Overdue SLA"
           value={overdueCount}
           icon={AlertCircle}
           colorTheme={overdueCount > 0 ? 'rose' : 'slate'}
+          onClick={() => setActiveTab('complaints')}
         />
       </div>
 

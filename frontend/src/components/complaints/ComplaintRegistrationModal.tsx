@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  AlertCircle,
   Building2,
-  CheckCircle2,
   FileUp,
   MapPin,
   Paperclip,
   Sparkles,
   X,
-  Zap,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Priority } from '../../types';
@@ -26,7 +23,7 @@ export const ComplaintRegistrationModal: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0]?.id || 'cat-wifi');
+  const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState<Priority>('HIGH');
   const [building, setBuilding] = useState('Turing Computing Center (Block B)');
   const [room, setRoom] = useState('Auditorium 202');
@@ -34,17 +31,10 @@ export const ComplaintRegistrationModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  useEffect(() => {
-    if (categories && categories.length > 0) {
-      if (!categoryId || !categories.some((c) => c.id === categoryId)) {
-        setCategoryId(categories[0].id);
-      }
-    }
-  }, [categories, categoryId]);
-
   if (!isRegisterModalOpen) return null;
 
-  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const currentCategoryId = categoryId || categories[0]?.id || 'cat-wifi';
+  const selectedCategory = categories.find((c) => c.id === currentCategoryId) || categories[0];
   const mappedDepartment = departments.find(
     (d) => d.id === selectedCategory?.departmentId && d.isActive
   );
@@ -76,7 +66,7 @@ export const ComplaintRegistrationModal: React.FC = () => {
       await createComplaint({
         title,
         description,
-        categoryId,
+        categoryId: currentCategoryId,
         priority,
         campus: selectedCampus,
         building,
@@ -182,7 +172,7 @@ export const ComplaintRegistrationModal: React.FC = () => {
                 Category <span className="text-rose-500">*</span>
               </label>
               <select
-                value={categoryId}
+                value={currentCategoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >

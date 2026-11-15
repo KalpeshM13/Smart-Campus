@@ -2,16 +2,14 @@ import React from 'react';
 import {
   Building2,
   Clock,
-  Inbox,
   Mail,
   Power,
   User,
-  Users,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const DepartmentsView: React.FC = () => {
-  const { departments, complaints, toggleDepartmentActive, setActiveTab } = useApp();
+  const { departments, complaints, toggleDepartmentActive } = useApp();
 
   return (
     <div className="space-y-6">
@@ -59,6 +57,7 @@ export const DepartmentsView: React.FC = () => {
                     <Building2 className="w-5 h-5" />
                   </div>
                   <button
+                    type="button"
                     onClick={() => toggleDepartmentActive(dept.id)}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition ${
                       dept.isActive

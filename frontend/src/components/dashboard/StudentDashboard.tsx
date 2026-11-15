@@ -1,18 +1,14 @@
 import React from 'react';
 import {
-  AlertCircle,
   Building,
   CheckCircle2,
   Clock,
-  FileQuestion,
-  HelpCircle,
   Inbox,
   PhoneCall,
   PlusCircle,
   ShieldAlert,
   Sparkles,
   Star,
-  Wifi,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { MetricCard } from '../common/MetricCard';
@@ -23,9 +19,9 @@ export const StudentDashboard: React.FC = () => {
     currentUser,
     complaints,
     setIsRegisterModalOpen,
-    setSelectedComplaint,
     setFeedbackTargetComplaint,
     setIsFeedbackModalOpen,
+    setActiveTab,
   } = useApp();
 
   const myComplaints = complaints.filter((c) => c.createdBy === currentUser.id);
@@ -58,6 +54,7 @@ export const StudentDashboard: React.FC = () => {
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
+              type="button"
               onClick={() => setIsRegisterModalOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-blue-900 bg-white hover:bg-blue-50 shadow-sm transition hover:shadow duration-150"
             >
@@ -93,6 +90,7 @@ export const StudentDashboard: React.FC = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => {
               setFeedbackTargetComplaint(awaitingFeedback[0]);
               setIsFeedbackModalOpen(true);
@@ -112,6 +110,7 @@ export const StudentDashboard: React.FC = () => {
           subValue="Service requests"
           icon={Inbox}
           colorTheme="blue"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Active In Progress"
@@ -119,6 +118,7 @@ export const StudentDashboard: React.FC = () => {
           subValue="Under engineering review"
           icon={Clock}
           colorTheme="amber"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="Resolved & Verified"
@@ -126,6 +126,7 @@ export const StudentDashboard: React.FC = () => {
           subValue="Resolved successfully"
           icon={CheckCircle2}
           colorTheme="emerald"
+          onClick={() => setActiveTab('complaints')}
         />
         <MetricCard
           label="SLA On-Time Rate"
@@ -133,6 +134,7 @@ export const StudentDashboard: React.FC = () => {
           subValue="Within target service window"
           icon={Building}
           colorTheme="indigo"
+          onClick={() => setActiveTab('complaints')}
         />
       </div>
 

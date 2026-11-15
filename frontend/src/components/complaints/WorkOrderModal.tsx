@@ -1,16 +1,9 @@
 import React from 'react';
 import {
-  Building2,
-  Calendar,
-  CheckCircle,
-  Clock,
   FileText,
-  MapPin,
   Printer,
   QrCode,
   Shield,
-  User,
-  Wrench,
   X,
 } from 'lucide-react';
 import { Complaint } from '../../types';
@@ -48,6 +41,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition"
             >
@@ -55,6 +49,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               <span>Print Work Order</span>
             </button>
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition"
             >

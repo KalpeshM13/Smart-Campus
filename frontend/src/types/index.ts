@@ -121,10 +121,10 @@ export interface Complaint {
 export type ViewTab =
   | 'dashboard'
   | 'complaints'
-  | 'register'
   | 'departments'
   | 'categories'
   | 'users'
   | 'feedback'
-  | 'settings';
+  | 'settings'
+  | 'not-found';
 

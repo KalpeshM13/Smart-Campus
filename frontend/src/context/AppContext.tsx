@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   INITIAL_CATEGORIES,
-  INITIAL_COMPLAINTS,
   INITIAL_DEPARTMENTS,
-  INITIAL_NOTIFICATIONS,
   USERS,
 } from '../data/mockData';
 import {
@@ -148,7 +146,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
+      } catch {
         // fallback
       }
     }
@@ -249,17 +247,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const uniqueCmps = deduplicateComplaints(cmps);
         setComplaints(uniqueCmps);
       }
-    } catch (err) {
-      console.warn('Backend sync poll notice:', err);
+    } catch {
+      // Backend polling notice handled gracefully without console clutter
     }
   }, [currentUser.email]);
 
   // Load live data on connection or persona switch
   useEffect(() => {
     if (isBackendConnected) {
-      refreshBackendData();
-      const interval = setInterval(refreshBackendData, 15000);
-      return () => clearInterval(interval);
+      let isMounted = true;
+      const load = async () => {
+        if (isMounted) {
+          await refreshBackendData();
+        }
+      };
+      void load();
+      const interval = setInterval(() => {
+        void refreshBackendData();
+      }, 15000);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
     }
   }, [isBackendConnected, refreshBackendData]);
 
@@ -842,6 +851,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
+// oxlint-disable-next-line react/only-export-components
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {

@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Building2,
   FileText,
   FolderGit2,
   Inbox,
   LayoutDashboard,
-  MessageSquare,
   PlusCircle,
   Search,
-  Users,
   X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -21,7 +18,7 @@ export const CommandPalette: React.FC = () => {
     setSelectedComplaint,
     setActiveTab,
     setIsRegisterModalOpen,
-    switchRole,
+    currentUser,
   } = useApp();
 
   const [query, setQuery] = useState('');
@@ -72,6 +69,7 @@ export const CommandPalette: React.FC = () => {
             className="w-full text-base bg-transparent border-none focus:outline-none placeholder:text-slate-400 text-slate-900"
           />
           <button
+            type="button"
             onClick={() => setIsCommandPaletteOpen(false)}
             className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
           >
@@ -89,6 +87,7 @@ export const CommandPalette: React.FC = () => {
               </p>
               <div className="grid grid-cols-2 gap-1.5">
                 <button
+                  type="button"
                   onClick={() => {
                     setIsRegisterModalOpen(true);
                     setIsCommandPaletteOpen(false);
@@ -99,6 +98,7 @@ export const CommandPalette: React.FC = () => {
                   <span>Report New Request</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setActiveTab('complaints');
                     setIsCommandPaletteOpen(false);
@@ -109,6 +109,7 @@ export const CommandPalette: React.FC = () => {
                   <span>Open Complaints Queue</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setActiveTab('dashboard');
                     setIsCommandPaletteOpen(false);
@@ -118,16 +119,31 @@ export const CommandPalette: React.FC = () => {
                   <LayoutDashboard className="w-4 h-4 text-slate-500" />
                   <span>Go to Executive Dashboard</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('categories');
-                    setIsCommandPaletteOpen(false);
-                  }}
-                  className="flex items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
-                >
-                  <FolderGit2 className="w-4 h-4 text-slate-500" />
-                  <span>Category Mappings</span>
-                </button>
+                {currentUser.role === 'ADMIN' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('categories');
+                      setIsCommandPaletteOpen(false);
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+                  >
+                    <FolderGit2 className="w-4 h-4 text-slate-500" />
+                    <span>Category Mappings</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('feedback');
+                      setIsCommandPaletteOpen(false);
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+                  >
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    <span>CSAT Feedback & Reviews</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

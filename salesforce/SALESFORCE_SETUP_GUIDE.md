@@ -196,7 +196,7 @@ To allow the FastAPI backend to securely query and mutate Cases:
    - **Selected OAuth Scopes:**
      - `Manage user data via APIs (api)`
      - `Perform requests on your behalf at any time (refresh_token, offline_access)`
-2. Click **Save** and wait 2–10 minutes for activation.
+2. Click **Save** and wait 2-10 minutes for activation.
 3. In **Manage Connected Apps → Edit Policies**:
    - **IP Relaxation:** Set to `Relax IP restrictions` (or enforce whitelist).
    - **Permitted Users:** Set to `All users may self-authorize` or `Admin approved users`.

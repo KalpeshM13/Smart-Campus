@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import {
   Bell,
   Clock,
-  Database,
-  Mail,
   Save,
-  Shield,
-  Sliders,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -147,6 +143,26 @@ export const SystemSettingsView: React.FC = () => {
                 </span>
               </div>
             </label>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-xs text-slate-900 block">
+                  Escalation Notification Cadence
+                </span>
+                <span className="text-slate-500 text-[11px]">
+                  Recurring interval for supervisor SLA reminders
+                </span>
+              </div>
+              <select
+                value={reminderFrequency}
+                onChange={(e) => setReminderFrequency(e.target.value)}
+                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"
+              >
+                <option value="6">Every 6 Hours</option>
+                <option value="12">Every 12 Hours (Default)</option>
+                <option value="24">Every 24 Hours</option>
+              </select>
+            </div>
           </div>
         </div>
 

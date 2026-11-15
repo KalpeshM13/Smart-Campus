@@ -1,20 +1,17 @@
 import React from 'react';
 import {
   AlertOctagon,
-  BarChart3,
   Building2,
-  CheckCircle2,
   Download,
   FolderGit2,
-  HelpCircle,
   Inbox,
   LayoutDashboard,
   MessageSquare,
   PlusCircle,
   Settings,
   ShieldCheck,
-  Sliders,
   Users,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ViewTab } from '../../types';
@@ -27,6 +24,8 @@ export const Sidebar: React.FC = () => {
     complaints,
     setIsRegisterModalOpen,
     exportComplaintsCSV,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
   } = useApp();
 
   // Calculate quick badges
@@ -110,16 +109,35 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 select-none">
-      {/* Primary Action Button */}
-      <div className="p-4 border-b border-slate-800/80">
+  const handleNavClick = (tabId: ViewTab) => {
+    setActiveTab(tabId);
+    setIsMobileSidebarOpen(false);
+  };
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-slate-900 text-slate-300 select-none">
+      {/* Primary Action Button & Mobile Close Header */}
+      <div className="p-4 border-b border-slate-800/80 flex items-center justify-between gap-2">
         <button
-          onClick={() => setIsRegisterModalOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-sm hover:shadow transition duration-150"
+          type="button"
+          onClick={() => {
+            setIsRegisterModalOpen(true);
+            setIsMobileSidebarOpen(false);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-sm hover:shadow transition duration-150"
         >
           <PlusCircle className="w-4 h-4" />
           <span>New Service Request</span>
+        </button>
+
+        {/* Mobile Close Button */}
+        <button
+          type="button"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="md:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          aria-label="Close sidebar"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -138,7 +156,8 @@ export const Sidebar: React.FC = () => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    type="button"
+                    onClick={() => handleNavClick(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-xs font-semibold'
@@ -172,7 +191,11 @@ export const Sidebar: React.FC = () => {
             </p>
             <div className="space-y-1.5 px-3">
               <button
-                onClick={() => exportComplaintsCSV()}
+                type="button"
+                onClick={() => {
+                  exportComplaintsCSV();
+                  setIsMobileSidebarOpen(false);
+                }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-lg border border-slate-700/60 transition"
               >
                 <Download className="w-3.5 h-3.5 text-blue-400" />
@@ -208,7 +231,30 @@ export const Sidebar: React.FC = () => {
           )}
         </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex w-64 shrink-0 border-r border-slate-800">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-50 md:hidden bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        >
+          <div
+            className="w-72 max-w-[80vw] h-full shadow-2xl animate-in slide-in-from-left duration-250"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
-

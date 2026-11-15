@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import {
-  CheckCircle,
-  Mail,
   Phone,
   Search,
-  Shield,
-  UserCheck,
-  UserPlus,
-  Users,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -79,7 +73,10 @@ export const UserManagementView: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <img
                         src={u.avatar}
-                        alt={u.fullName}
+                        alt={`${u.fullName || 'User'} avatar photo`}
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
                         className="w-8 h-8 rounded-full object-cover border border-slate-200"
                       />
                       <div>
@@ -134,6 +131,7 @@ export const UserManagementView: React.FC = () => {
 
                   <td className="py-3 px-4 text-right whitespace-nowrap">
                     <button
+                      type="button"
                       onClick={() => switchRole(u.role)}
                       className="px-2.5 py-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg border border-blue-200 transition"
                     >
