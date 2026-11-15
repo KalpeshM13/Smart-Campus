@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
@@ -17,7 +18,8 @@ from app.routers import (
     feedback,
     notifications,
     dashboards,
-    reports
+    reports,
+    salesforce_sync
 )
 
 logger = logging.getLogger("smart_campus")
@@ -28,20 +30,41 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: connect to MongoDB Atlas / local MongoDB, verify indexes, and seed default data
+    # Startup: connect to MongoDB, verify indexes, and start continuous Salesforce sync
+    sync_task = None
     try:
         db = get_database()
         init_mongodb_indexes(db)
-        seed_database_defaults(db)
+
+        from app.integrations.salesforce.config import sf_config
+        from app.integrations.salesforce.sync import get_sync_engine
+
+        if not sf_config.MOCK_MODE:
+            logger.info("Initializing from live Salesforce Service Cloud and starting continuous sync daemon...")
+            sync_engine = get_sync_engine()
+            # If MongoDB has no cases, do initial ingest
+            if db.complaints.count_documents({}) == 0:
+                sync_engine.full_wipe_and_sync(db)
+            else:
+                sync_engine.delta_sync(db)
+            # Start background continuous synchronization loop (polls every 30s)
+            sync_task = asyncio.create_task(
+                sync_engine.run_continuous_sync_loop(get_database, interval_seconds=30)
+            )
+        else:
+            seed_database_defaults(db)
+
         check_and_flag_overdue_complaints(db)
-        logger.info("MongoDB database connection and seeding initialized successfully.")
+        logger.info("MongoDB database connection and synchronization initialized successfully.")
     except Exception as e:
         logger.error(
             f"Startup database initialization error: {e}. "
             "If connecting to MongoDB Atlas, ensure Network Access allows 0.0.0.0/0."
         )
     yield
-    # Shutdown: close MongoDB client pool
+    # Shutdown: cancel background continuous sync and close MongoDB client pool
+    if sync_task and not sync_task.done():
+        sync_task.cancel()
     if _mongo_client:
         _mongo_client.close()
 
@@ -91,6 +114,7 @@ app.include_router(feedback.router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(dashboards.router, prefix=settings.API_V1_STR)
 app.include_router(reports.router, prefix=settings.API_V1_STR)
+app.include_router(salesforce_sync.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
