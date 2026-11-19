@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Mandatory_Hold_Reason</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    ISPICKVAL(Status, &quot;On Hold&quot;),
+    OR(
+        ISBLANK(Hold_Reason__c),
+        LEN(TRIM(Hold_Reason__c)) &lt; 3
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Hold_Reason__c</errorDisplayField>
+    <errorMessage>A valid justification is required when placing this Case on hold.</errorMessage>
+</ValidationRule>

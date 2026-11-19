@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Mandatory_Resolution_Notes</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    ISPICKVAL(Status, &quot;Resolved&quot;),
+    OR(
+        ISBLANK(Resolution_Notes__c),
+        LEN(TRIM(Resolution_Notes__c)) &lt; 5
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Resolution_Notes__c</errorDisplayField>
+    <errorMessage>Technical resolution notes (minimum 5 characters) are mandatory before marking this Case as Resolved.</errorMessage>
+</ValidationRule>

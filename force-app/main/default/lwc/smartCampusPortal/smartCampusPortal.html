@@ -1,0 +1,564 @@
+<template>
+    <div class="smart-campus-wrapper slds-card slds-p-around_medium">
+        <!-- TOP HEADER -->
+        <header class="slds-page-header slds-page-header_record-home header-container">
+            <div class="slds-page-header__row">
+                <div class="slds-page-header__col-title">
+                    <div class="slds-media">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-case header-icon-box" title="Smart Campus">
+                                <lightning-icon icon-name="standard:case" alternative-text="Campus Case" size="medium"></lightning-icon>
+                            </span>
+                        </div>
+                        <div class="slds-media__body">
+                            <div class="slds-page-header__name">
+                                <div class="slds-page-header__name-title">
+                                    <h1>
+                                        <span class="slds-page-header__title slds-truncate title-text" title="Smart Campus Operations">
+                                            Smart Campus Service Cloud
+                                        </span>
+                                    </h1>
+                                </div>
+                            </div>
+                            <p class="slds-page-header__name-meta subtitle-text">
+                                Enterprise Campus Facilities, IT & Operations Management • 100% Native Salesforce Cloud
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-page-header__col-actions">
+                    <div class="slds-page-header__controls">
+                        <div class="slds-page-header__control">
+                            <lightning-button-group>
+                                <lightning-button 
+                                    label="Log New Request" 
+                                    icon-name="utility:add" 
+                                    variant="brand" 
+                                    onclick={openNewModal}>
+                                </lightning-button>
+                                <lightning-button-icon 
+                                    icon-name="utility:refresh" 
+                                    alternative-text="Refresh Data" 
+                                    onclick={handleRefresh}>
+                                </lightning-button-icon>
+                            </lightning-button-group>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI METRICS BANNER -->
+        <div class="slds-grid slds-wrap slds-gutters slds-m-vertical_medium">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="metric-card metric-card-blue">
+                    <div class="metric-value">{metrics.totalComplaints}</div>
+                    <div class="metric-label">Total Campus Requests</div>
+                    <div class="metric-subtext">All time volume</div>
+                </div>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="metric-card metric-card-orange">
+                    <div class="metric-value">{metrics.inProgressComplaints}</div>
+                    <div class="metric-label">In Progress (Active Work)</div>
+                    <div class="metric-subtext">{metrics.openComplaints} in triage queue</div>
+                </div>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="metric-card metric-card-red">
+                    <div class="metric-value">{metrics.overdueComplaints}</div>
+                    <div class="metric-label">Overdue / SLA Breaches</div>
+                    <div class="metric-subtext">Requires immediate escalation</div>
+                </div>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                <div class="metric-card metric-card-green">
+                    <div class="metric-value">★ {metrics.averageCsat} / 5.0</div>
+                    <div class="metric-label">CSAT Satisfaction Rating</div>
+                    <div class="metric-subtext">{metrics.totalFeedbackCount} requester reviews</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROLE NAVIGATION TABS -->
+        <lightning-tabset variant="scoped" active-tab-value={activeTab}>
+            <!-- TAB 1: REQUESTER HUB -->
+            <lightning-tab label="My Service Requests (Student / Faculty)" value="requester" onactive={handleTabSelect}>
+                <div class="slds-p-around_small">
+                    <!-- Filters Row -->
+                    <div class="slds-grid slds-wrap slds-gutters slds-grid_vertical-align-center slds-m-bottom_medium">
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input 
+                                type="search" 
+                                placeholder="Search by Case #, Subject, Building, Room..." 
+                                value={searchTerm}
+                                onchange={handleSearch}
+                                variant="label-hidden">
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                            <lightning-combobox
+                                name="statusFilter"
+                                value={statusFilter}
+                                options={statusOptions}
+                                onchange={handleStatusFilterChange}
+                                variant="label-hidden"
+                                placeholder="Filter by Status">
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-text-align_right">
+                            <lightning-button 
+                                label="+ New Service Ticket" 
+                                variant="brand" 
+                                icon-name="utility:new" 
+                                onclick={openNewModal}>
+                            </lightning-button>
+                        </div>
+                    </div>
+
+                    <!-- Complaints Table -->
+                    <template if:true={isLoading}>
+                        <div class="slds-p-around_large slds-text-align_center">
+                            <lightning-spinner alternative-text="Loading requests..."></lightning-spinner>
+                        </div>
+                    </template>
+                    <template if:false={isLoading}>
+                        <div class="slds-table--header-fixed_container table-container">
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                                <thead>
+                                    <tr class="slds-line-height_reset">
+                                        <th scope="col"><div class="slds-truncate" title="Case #">Case #</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Subject">Subject / Title</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Category">Category</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Location">Location</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Priority">Priority</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Status">Status</div></th>
+                                        <th scope="col"><div class="slds-truncate" title="Actions">Actions</div></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={complaints} for:item="c">
+                                        <tr key={c.Id}>
+                                            <td>
+                                                <a href="javascript:void(0);" data-id={c.Id} onclick={openDetailModal} class="case-link">
+                                                    {c.CaseNumber}
+                                                </a>
+                                            </td>
+                                            <td><div class="slds-truncate max-w-title" title={c.Subject}>{c.Subject}</div></td>
+                                            <td><span class="slds-badge slds-badge_inverse">{c.categoryName}</span></td>
+                                            <td>{c.locationStr}</td>
+                                            <td><span class={c.priorityClass}>{c.Priority}</span></td>
+                                            <td>
+                                                <span class={c.statusClass}>{c.Status}</span>
+                                                <template if:true={c.isOverdue}>
+                                                    <span class="slds-badge slds-theme_error slds-m-left_xx-small">OVERDUE</span>
+                                                </template>
+                                            </td>
+                                            <td>
+                                                <lightning-button-group>
+                                                    <lightning-button-icon 
+                                                        icon-name="utility:preview" 
+                                                        data-id={c.Id} 
+                                                        onclick={openDetailModal} 
+                                                        alternative-text="View Details">
+                                                    </lightning-button-icon>
+                                                    <template if:true={c.canRate}>
+                                                        <lightning-button 
+                                                            label="Rate (CSAT)" 
+                                                            variant="neutral" 
+                                                            icon-name="utility:favorite" 
+                                                            data-id={c.Id} 
+                                                            onclick={openFeedbackModal}>
+                                                        </lightning-button>
+                                                    </template>
+                                                </lightning-button-group>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+            </lightning-tab>
+
+            <!-- TAB 2: DEPARTMENT WORK QUEUE (STAFF / TECHNICIANS) -->
+            <lightning-tab label="Department Work Queue (Staff & Technicians)" value="staff" onactive={handleTabSelect}>
+                <div class="slds-p-around_small">
+                    <!-- Queue Switcher -->
+                    <div class="slds-grid slds-wrap slds-gutters slds-grid_vertical-align-center slds-m-bottom_medium">
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                            <lightning-combobox
+                                label="Target Department"
+                                value={selectedDepartmentId}
+                                options={departments}
+                                onchange={handleDepartmentChange}
+                                placeholder="Select Department Queue">
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                            <lightning-combobox
+                                label="Status Filter"
+                                value={statusFilter}
+                                options={statusOptions}
+                                onchange={handleStatusFilterChange}>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-text-align_right">
+                            <p class="slds-text-body_small slds-p-top_large">
+                                Direct queue actions execute real-time SLA tracking & technician validation rules.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Queue Table -->
+                    <div class="slds-table--header-fixed_container table-container">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col"><div class="slds-truncate" title="Case #">Case #</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Subject">Subject</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Department">Department / Queue</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Location">Location</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Priority">Priority</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Status">Status</div></th>
+                                    <th scope="col"><div class="slds-truncate" title="Quick Action">Work Order Action</div></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={complaints} for:item="c">
+                                    <tr key={c.Id}>
+                                        <td>
+                                            <a href="javascript:void(0);" data-id={c.Id} onclick={openDetailModal} class="case-link">
+                                                {c.CaseNumber}
+                                            </a>
+                                        </td>
+                                        <td><div class="slds-truncate max-w-title" title={c.Subject}>{c.Subject}</div></td>
+                                        <td>{c.departmentName} ({c.ownerName})</td>
+                                        <td>{c.locationStr}</td>
+                                        <td><span class={c.priorityClass}>{c.Priority}</span></td>
+                                        <td>
+                                            <span class={c.statusClass}>{c.Status}</span>
+                                            <template if:true={c.isOverdue}>
+                                                <span class="slds-badge slds-theme_error slds-m-left_xx-small">OVERDUE</span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <lightning-button 
+                                                label="Update Status / Notes" 
+                                                variant="brand" 
+                                                icon-name="utility:edit" 
+                                                data-id={c.Id} 
+                                                onclick={openStatusModal}>
+                                            </lightning-button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </lightning-tab>
+
+            <!-- TAB 3: ADMIN OPERATIONS & CONFIG -->
+            <lightning-tab label="Operations Command Center (Admin)" value="admin" onactive={handleTabSelect}>
+                <div class="slds-p-around_small">
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <!-- Department Breakdown -->
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_medium">
+                            <article class="slds-card slds-p-around_small admin-card">
+                                <h3 class="slds-text-heading_small slds-m-bottom_small">📊 Tickets by Department</h3>
+                                <template for:each={metrics.departmentBreakdown} for:item="d">
+                                    <div key={d.label} class="slds-grid slds-grid_align-spread slds-p-vertical_xx-small border-bottom">
+                                        <span class="slds-text-body_regular font-bold">{d.label}</span>
+                                        <span class="slds-badge slds-theme_info">{d.count} Cases</span>
+                                    </div>
+                                </template>
+                            </article>
+                        </div>
+
+                        <!-- Category Breakdown -->
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_medium">
+                            <article class="slds-card slds-p-around_small admin-card">
+                                <h3 class="slds-text-heading_small slds-m-bottom_small">🏷️ Tickets by Category</h3>
+                                <template for:each={metrics.categoryBreakdown} for:item="cat">
+                                    <div key={cat.label} class="slds-grid slds-grid_align-spread slds-p-vertical_xx-small border-bottom">
+                                        <span class="slds-text-body_regular font-bold">{cat.label}</span>
+                                        <span class="slds-badge slds-badge_inverse">{cat.count} Cases</span>
+                                    </div>
+                                </template>
+                            </article>
+                        </div>
+                    </div>
+
+                    <!-- CSAT Feedback Feed -->
+                    <article class="slds-card slds-p-around_small slds-m-top_medium admin-card">
+                        <h3 class="slds-text-heading_small slds-m-bottom_small">⭐ Requester CSAT Reviews & Feedback Feed</h3>
+                        <div class="table-container">
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Case #</th>
+                                        <th>Subject</th>
+                                        <th>Rating</th>
+                                        <th>Comments</th>
+                                        <th>Requester</th>
+                                        <th>Submitted</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={feedbackRecords} for:item="fb">
+                                        <tr key={fb.Id}>
+                                            <td>{fb.caseNumber}</td>
+                                            <td>{fb.caseSubject}</td>
+                                            <td><span class="star-rating">{fb.stars}</span> ({fb.Rating__c}/5)</td>
+                                            <td>{fb.Comments__c}</td>
+                                            <td>{fb.Requester_Id__c}</td>
+                                            <td>{fb.Submitted_Date__c}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+            </lightning-tab>
+        </lightning-tabset>
+
+        <!-- ================= MODALS ================= -->
+
+        <!-- MODAL 1: NEW SERVICE REQUEST -->
+        <template if:true={isNewModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeNewModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title slds-hyphenate">📝 Register New Campus Service Request</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                <lightning-input 
+                                    name="subject" 
+                                    label="Issue Title / Subject" 
+                                    value={newForm.subject} 
+                                    onchange={handleNewFormChange} 
+                                    required>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                                <lightning-combobox
+                                    name="categoryId"
+                                    label="Complaint Category"
+                                    value={newForm.categoryId}
+                                    options={categories}
+                                    onchange={handleNewFormChange}
+                                    required>
+                                </lightning-combobox>
+                                <div class="slds-m-top_xx-small">
+                                    <span class="slds-badge slds-theme_info">{dynamicSlaBadge}</span>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                                <lightning-combobox
+                                    name="priority"
+                                    label="Urgency / Priority"
+                                    value={newForm.priority}
+                                    options={priorityOptions}
+                                    onchange={handleNewFormChange}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                                <lightning-input name="campus" label="Campus Location" value={newForm.campus} onchange={handleNewFormChange}></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                                <lightning-input name="building" label="Building / Complex" value={newForm.building} onchange={handleNewFormChange} placeholder="e.g. Engineering Block C"></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                                <lightning-input name="room" label="Room / Lab #" value={newForm.room} onchange={handleNewFormChange} placeholder="e.g. Lab 305"></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                <lightning-textarea 
+                                    name="description" 
+                                    label="Detailed Description" 
+                                    value={newForm.description} 
+                                    onchange={handleNewFormChange} 
+                                    rows="4" 
+                                    placeholder="Explain the symptom, exact location, and equipment involved...">
+                                </lightning-textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={closeNewModal} class="slds-m-right_small"></lightning-button>
+                        <lightning-button label="Submit Service Request" variant="brand" onclick={handleSubmitNewRequest}></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- MODAL 2: WORK ORDER STATUS UPDATE -->
+        <template if:true={isStatusModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeStatusModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title slds-hyphenate">⚙️ Technician Work Order: {selectedCase.CaseNumber}</h2>
+                        <p class="slds-text-body_small">{selectedCase.Subject}</p>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-m-bottom_small">
+                            <lightning-combobox
+                                name="newStatus"
+                                label="Target Lifecycle State"
+                                value={statusForm.newStatus}
+                                options={statusOptions}
+                                onchange={handleStatusFormChange}
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <template if:true={isHoldStatus}>
+                            <div class="slds-m-bottom_small">
+                                <lightning-input 
+                                    name="holdReason" 
+                                    label="Justification for Hold (Mandatory)" 
+                                    value={statusForm.holdReason} 
+                                    onchange={handleStatusFormChange} 
+                                    required 
+                                    placeholder="e.g. Awaiting Cisco 48-port switch replacement parts from vendor...">
+                                </lightning-input>
+                            </div>
+                        </template>
+                        <template if:true={isResolvedStatus}>
+                            <div class="slds-m-bottom_small">
+                                <lightning-textarea 
+                                    name="resolutionNotes" 
+                                    label="Technical Resolution Notes (Mandatory min 10 chars)" 
+                                    value={statusForm.resolutionNotes} 
+                                    onchange={handleStatusFormChange} 
+                                    required 
+                                    rows="4" 
+                                    placeholder="Describe root cause and remediation performed (e.g. Replaced tripped 30A circuit breaker and tested voltage)...">
+                                </lightning-textarea>
+                            </div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={closeStatusModal} class="slds-m-right_small"></lightning-button>
+                        <lightning-button label="Apply Status Transition" variant="brand" onclick={handleSaveStatusUpdate}></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- MODAL 3: CSAT FEEDBACK -->
+        <template if:true={isFeedbackModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_small">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeFeedbackModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title slds-hyphenate">⭐ Requester CSAT Feedback: {selectedCase.CaseNumber}</h2>
+                        <p class="slds-text-body_small">Rate the quality of service provided by our campus operations team.</p>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium slds-text-align_center">
+                        <div class="slds-m-bottom_medium">
+                            <span class="slds-text-heading_medium">Select Star Rating</span>
+                            <div class="star-container slds-m-top_small">
+                                <template for:each={ratingStars} for:item="s">
+                                    <button 
+                                        key={s.val} 
+                                        type="button" 
+                                        data-rating={s.val} 
+                                        onclick={handleRatingClick} 
+                                        class="star-button">
+                                        <template if:true={s.active}>⭐</template>
+                                        <template if:false={s.active}>☆</template>
+                                    </button>
+                                </template>
+                            </div>
+                            <p class="slds-text-title slds-m-top_x-small">({feedbackForm.rating} / 5 Stars)</p>
+                        </div>
+                        <div class="slds-text-align_left">
+                            <lightning-textarea 
+                                label="Additional Comments / Commendations" 
+                                value={feedbackForm.comments} 
+                                onchange={handleFeedbackCommentsChange} 
+                                rows="3" 
+                                placeholder="Let us know how the technician performed...">
+                            </lightning-textarea>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={closeFeedbackModal} class="slds-m-right_small"></lightning-button>
+                        <lightning-button label="Submit & Close Ticket" variant="brand" onclick={handleSubmitFeedback}></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- MODAL 4: DETAILS MODAL -->
+        <template if:true={isDetailModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeDetailModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title slds-hyphenate">Case {selectedCase.CaseNumber}: {selectedCase.Subject}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>Status:</strong> <span class={selectedCase.statusClass}>{selectedCase.Status}</span>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>Priority:</strong> <span class={selectedCase.priorityClass}>{selectedCase.Priority}</span>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>Category:</strong> {selectedCase.categoryName}
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>Department Queue:</strong> {selectedCase.departmentName}
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>Campus Location:</strong> {selectedCase.locationStr}
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                <strong>SLA Target:</strong> {selectedCase.SLA_Target_Time__c}
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                <strong>Description:</strong>
+                                <p class="slds-p-around_x-small slds-theme_shade slds-m-top_xx-small">{selectedCase.Description}</p>
+                            </div>
+                            <template if:true={selectedCase.Hold_Reason__c}>
+                                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                    <strong class="slds-text-color_error">Hold Reason:</strong>
+                                    <p class="slds-p-around_x-small slds-theme_shade slds-m-top_xx-small">{selectedCase.Hold_Reason__c}</p>
+                                </div>
+                            </template>
+                            <template if:true={selectedCase.Resolution_Notes__c}>
+                                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                    <strong class="slds-text-color_success">Resolution Notes:</strong>
+                                    <p class="slds-p-around_x-small slds-theme_shade slds-m-top_xx-small">{selectedCase.Resolution_Notes__c}</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Close" onclick={closeDetailModal} variant="neutral"></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>
