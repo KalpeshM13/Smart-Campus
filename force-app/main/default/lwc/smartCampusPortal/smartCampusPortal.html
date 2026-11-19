@@ -100,7 +100,7 @@
                             <lightning-combobox
                                 name="statusFilter"
                                 value={statusFilter}
-                                options={statusOptions}
+                                options={filterStatusOptions}
                                 onchange={handleStatusFilterChange}
                                 variant="label-hidden"
                                 placeholder="Filter by Status">
@@ -122,7 +122,17 @@
                             <lightning-spinner alternative-text="Loading requests..."></lightning-spinner>
                         </div>
                     </template>
+                    <template if:true={hasNoComplaints}>
+                        <div class="slds-p-around_large slds-text-align_center empty-state-box slds-m-top_small">
+                            <lightning-icon icon-name="utility:inbox" size="large" variant="neutral"></lightning-icon>
+                            <h3 class="slds-text-heading_small slds-m-top_small font-bold">No Service Requests Found</h3>
+                            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_xx-small">
+                                There are no tickets matching your current search or filter criteria.
+                            </p>
+                        </div>
+                    </template>
                     <template if:false={isLoading}>
+                        <template if:false={hasNoComplaints}>
                         <div class="slds-table--header-fixed_container table-container">
                             <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
                                 <thead>
@@ -178,6 +188,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        </template>
                     </template>
                 </div>
             </lightning-tab>
@@ -200,7 +211,7 @@
                             <lightning-combobox
                                 label="Status Filter"
                                 value={statusFilter}
-                                options={statusOptions}
+                                options={filterStatusOptions}
                                 onchange={handleStatusFilterChange}>
                             </lightning-combobox>
                         </div>
@@ -212,6 +223,16 @@
                     </div>
 
                     <!-- Queue Table -->
+                    <template if:true={hasNoComplaints}>
+                        <div class="slds-p-around_large slds-text-align_center empty-state-box slds-m-top_small">
+                            <lightning-icon icon-name="utility:inbox" size="large" variant="neutral"></lightning-icon>
+                            <h3 class="slds-text-heading_small slds-m-top_small font-bold">Queue Empty</h3>
+                            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_xx-small">
+                                No service tickets currently in this department queue matching the filter.
+                            </p>
+                        </div>
+                    </template>
+                    <template if:false={hasNoComplaints}>
                     <div class="slds-table--header-fixed_container table-container">
                         <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
                             <thead>
@@ -257,6 +278,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </template>
                 </div>
             </lightning-tab>
 

@@ -146,6 +146,10 @@ export default class SmartCampusPortal extends LightningElement {
         return this.activeTab === 'admin';
     }
 
+    get hasNoComplaints() {
+        return !this.isLoading && (!this.complaints || this.complaints.length === 0);
+    }
+
     // Complaints Query
     fetchComplaints() {
         this.isLoading = true;
@@ -360,7 +364,18 @@ export default class SmartCampusPortal extends LightningElement {
         return this.statusForm.newStatus === 'Resolved';
     }
 
-    get statusOptions() {
+    get filterStatusOptions() {
+        return [
+            { label: 'All Statuses', value: 'ALL' },
+            { label: 'Open (New / Assigned)', value: 'OPEN' },
+            { label: 'In Progress (Active Work)', value: 'IN_PROGRESS' },
+            { label: 'On Hold (Pending Parts / Info)', value: 'ON_HOLD' },
+            { label: 'Resolved (Work Complete)', value: 'RESOLVED' },
+            { label: 'Closed (Archived)', value: 'CLOSED' }
+        ];
+    }
+
+    get modalStatusOptions() {
         return [
             { label: 'In Progress (Active Work)', value: 'In Progress' },
             { label: 'On Hold (Pending Parts / Info)', value: 'On Hold' },
@@ -368,6 +383,10 @@ export default class SmartCampusPortal extends LightningElement {
             { label: 'Closed (Archived)', value: 'Closed' },
             { label: 'Rejected (Invalid / Duplicate)', value: 'Rejected' }
         ];
+    }
+
+    get statusOptions() {
+        return this.modalStatusOptions;
     }
 
     handleSaveStatusUpdate() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Smart Campus Service Management System - 100% Native Salesforce Cloud Setup & Verification Engine
-Deploys, configures permissions, audits, and runs Apex unit tests.
+Deploys, configures permissions, audits, and runs Apex unit tests with coverage reporting.
 """
 
 import os
@@ -94,18 +94,14 @@ def ensure_permissions(sf):
         return
     app_id = app_records[0]['Id']
 
-    # Get Admin Profile permission sets
     admin_psets = sf.query("SELECT Id, Name, Profile.Name FROM PermissionSet WHERE Profile.Name = 'System Administrator' OR Name LIKE '%Smart_Campus%'")
     for ps in admin_psets:
         ps_id = ps['Id']
-        # Grant App Access
         sf.request("/sobjects/SetupEntityAccess", method="POST", payload={"ParentId": ps_id, "SetupEntityId": app_id})
         
-        # Grant Tabs
         for tab in ['Smart_Campus_Portal', 'Department__c', 'Complaint_Category__c', 'Complaint_Feedback__c']:
             sf.request("/sobjects/PermissionSetTabSetting", method="POST", payload={"ParentId": ps_id, "Name": tab, "Visibility": "DefaultOn"})
 
-    # Assign Smart_Campus_Admin permission set to active administrators
     smart_admin_ps = next((p['Id'] for p in admin_psets if 'Smart_Campus_Admin' in p.get('Name', '')), None)
     if smart_admin_ps:
         admin_users = sf.query("SELECT Id, Username FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = true")
@@ -114,7 +110,7 @@ def ensure_permissions(sf):
 
 def run_setup_and_audit():
     print("==================================================================")
-    print("☁️ SMART CAMPUS - NATIVE SALESFORCE CLOUD SETUP & AUDIT")
+    print("☁️ SMART CAMPUS - NATIVE SALESFORCE CLOUD AUDIT & VERIFICATION")
     print("==================================================================")
     
     sf = SalesforceAdminClient()
@@ -139,7 +135,7 @@ def run_setup_and_audit():
     lwcs = sf.query("SELECT Id, DeveloperName, MasterLabel FROM LightningComponentBundle WHERE DeveloperName = 'smartCampusPortal'", tooling=True)
     print("\n3. Lightning Web Component:")
     for l in lwcs:
-        print(f"   [PASS] {l.get('DeveloperName')} ('{l.get('MasterLabel')}') - Deployed & Exposed to Tabs/App Pages")
+        print(f"   [PASS] {l.get('DeveloperName')} ('{l.get('MasterLabel')}') - Deployed & Exposed")
 
     # 4. Custom Tabs
     tabs = sf.query("SELECT Id, DeveloperName, MasterLabel FROM CustomTab WHERE DeveloperName IN ('Smart_Campus_Portal', 'Department__c', 'Complaint_Category__c', 'Complaint_Feedback__c')", tooling=True)
@@ -163,7 +159,7 @@ def run_setup_and_audit():
     depts = sf.query("SELECT Id, Name, Code__c, Queue_Name__c FROM Department__c")
     cats = sf.query("SELECT Id, Name, Code__c, Default_Department__r.Name, SLA_Hours_High__c FROM Complaint_Category__c")
     print(f"\n7. Active Master Data:")
-    print(f"   - Campus Departments:  {len(depts)} active records")
+    print(f"   - Campus Departments:   {len(depts)} active records")
     print(f"   - Complaint Categories: {len(cats)} active records with SLA configuration")
 
     # 8. Run Apex Tests
@@ -173,15 +169,27 @@ def run_setup_and_audit():
         test_id = t_records[0]['Id']
         status, test_res = sf.request("/runTestsSynchronous", method="POST", payload={"tests": [{"classId": test_id}]}, tooling=True)
         if status == 200:
-            print(f"   - Tests Run:     {test_res.get('numTestsRun')}")
-            print(f"   - Total Failures: {test_res.get('numFailures')}")
+            print(f"   - Total Tests Run: {test_res.get('numTestsRun')}")
+            print(f"   - Test Failures:   {test_res.get('numFailures')}")
             for s in test_res.get('successes', []):
                 print(f"   - [PASS] {s.get('methodName')} ({s.get('time')}ms)")
             for f in test_res.get('failures', []):
                 print(f"   - [FAIL] {f.get('methodName')}: {f.get('message')}")
 
+    # 9. Apex Test Coverage Summary
+    cov = sf.query("SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name IN ('SmartCampusController', 'SmartCampusCaseTrigger', 'SmartCampusFeedbackTrigger')", tooling=True)
+    print("\n9. Apex Code Coverage Metrics:")
+    for c in cov:
+        name = c.get('ApexClassOrTrigger', {}).get('Name')
+        cov_lines = c.get('NumLinesCovered', 0)
+        uncov_lines = c.get('NumLinesUncovered', 0)
+        tot = cov_lines + uncov_lines
+        pct = (cov_lines / tot * 100) if tot > 0 else 0
+        print(f"   - {name}: {pct:.1f}% ({cov_lines}/{tot} lines covered)")
+
     print("\n==================================================================")
     print("SUCCESS: Smart Campus Service Management System is 100% active on Salesforce Cloud!")
+    print("Direct Portal URL: https://orgfarm-bc1061b553-dev-ed.develop.my.salesforce.com/lightning/n/Smart_Campus_Portal")
     print("==================================================================")
 
 if __name__ == '__main__':

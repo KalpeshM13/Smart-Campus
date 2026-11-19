@@ -149,3 +149,9 @@
     font-size: 1.1rem;
     letter-spacing: 2px;
 }
+
+.empty-state-box {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+}
